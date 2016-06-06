@@ -26,7 +26,7 @@ Installation
 Install libgit2:
 
 ```bash
-go get github.com/libgit2/git2go
+go get -d github.com/libgit2/git2go
 cd $GOPATH/src/github.com/libgit2/git2go
 git checkout next
 git submodule update --init
