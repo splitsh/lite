@@ -20,6 +20,13 @@ lightning talk I gave at dotScale... or the longer version from DrupalCon.
 The main **splitsh-lite** feature is its ability to create a branch in a repository
 from one or many directories.
 
+Requirements
+------------
+
+few requirements you should be aware of before installing libgit2
+   - `cmake`
+   - `pkg-config`
+
 Installation
 ------------
 
