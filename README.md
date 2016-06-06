@@ -2,7 +2,7 @@ Monorepo to Manyrepos made easy
 ===============================
 
 **tl;dr**: **splitsh-lite** is a replacement for the `subtree split` Git
-build-in command that is much faster and has more features at the same time.
+built-in command that is much faster and has more features at the same time.
 
 When starting a new project, do you store all the code in one monolith
 repository? Or are you creating many repositories?
@@ -115,7 +115,7 @@ Available options:
    for the split commits were computed differently (useful if you are switching
    from the git command to **splitsh-lite**).
 
-**splitsh** provides more features including a sanity checker, Github integration
+**splitsh** provides more features including a sanity checker, GitHub integration
 for real-time splitting, tagging management and synchronization, and more.
 It has been used by the Symfony project for many years but the tool is not yet
 ready for Open-Source. Stay tuned!
