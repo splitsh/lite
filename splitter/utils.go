@@ -25,7 +25,7 @@ func GitDirectory(path string) string {
 
 // SplitMessage splits a git message
 func SplitMessage(message string) (string, string) {
-	// we split the messsage at \n\n or \r\n\r\n
+	// we split the message at \n\n or \r\n\r\n
 	var subject, body string
 	found := false
 	for i := 0; i+4 <= len(message); i++ {
