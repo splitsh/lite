@@ -45,12 +45,7 @@ func newCache(branch string, config *Config) (*cache, error) {
 }
 
 func (c *cache) close() error {
-	err := c.db.Close()
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return c.db.Close()
 }
 
 func key(config *Config) []byte {
