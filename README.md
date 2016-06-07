@@ -39,6 +39,7 @@ make install
 Compiling
 
 ```bash
+go get github.com/splitsh/lite
 go build -o splitsh-lite github.com/splitsh/lite
 ```
 
