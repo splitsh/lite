@@ -23,87 +23,67 @@ type state struct {
 }
 
 func newState(config *Config, result *Result) (*state, error) {
+	var err error
+
 	// validate config
-	err := config.Validate()
-	if err != nil {
+	if err := config.Validate(); err != nil {
 		return nil, err
 	}
 
-	repo := config.Repo
-	if config.Repo == nil {
-		repo, err = git.OpenRepository(config.Path)
-		if err != nil {
+	state := &state{
+		config: config,
+		result: result,
+		repoMu: config.RepoMu,
+		repo:   config.Repo,
+		logger: config.Logger,
+	}
+
+	if state.repo == nil {
+		if state.repo, err = git.OpenRepository(config.Path); err != nil {
 			return nil, err
 		}
 	}
 
-	logger := config.Logger
-	if logger == nil {
-		logger = log.New(os.Stderr, "", log.LstdFlags)
+	if state.repoMu == nil {
+		state.repoMu = &sync.Mutex{}
 	}
 
-	originBranch, err := normalizeOriginBranch(repo, config.Origin)
-	if err != nil {
+	if state.logger == nil {
+		state.logger = log.New(os.Stderr, "", log.LstdFlags)
+	}
+
+	if state.originBranch, err = normalizeOriginBranch(state.repo, config.Origin); err != nil {
 		return nil, err
 	}
+
+	if state.cache, err = newCache(state.originBranch, config); err != nil {
+		return nil, err
+	}
+
 	if config.Debug {
-		logger.Printf("Splitting %s\n", originBranch)
+		state.logger.Printf("Splitting %s\n", state.originBranch)
 		for _, v := range config.Prefixes {
 			to := v.To
 			if to == "" {
 				to = "ROOT"
 			}
-			logger.Printf("  From \"%s\" to \"%s\"\n", v.From, to)
+			state.logger.Printf("  From \"%s\" to \"%s\"\n", v.From, to)
 		}
-	}
-
-	cache, err := newCache(originBranch, config)
-	if err != nil {
-		return nil, err
 	}
 
 	if config.Scratch {
-		err = cache.flush()
-		if err != nil {
+		if err := state.flush(); err != nil {
 			return nil, err
 		}
-
-		if config.Target != "" {
-			branch, err := repo.LookupBranch(config.Target, git.BranchLocal)
-			if err == nil {
-				branch.Delete()
-				branch.Free()
-			}
-		}
 	}
 
-	// SimplePrefix contains the prefix when there is only one
+	// simplePrefix contains the prefix when there is only one
 	// with an empty value (target)
-	simplePrefix := ""
-	if len(config.Prefixes) == 1 {
-		for _, prefix := range config.Prefixes {
-			if prefix.To == "" {
-				simplePrefix = prefix.From
-			}
-			break
-		}
+	if len(config.Prefixes) == 1 && config.Prefixes[0].To == "" {
+		state.simplePrefix = config.Prefixes[0].From
 	}
 
-	repoMu := &sync.Mutex{}
-	if config.RepoMu != nil {
-		repoMu = config.RepoMu
-	}
-
-	return &state{
-		config:       config,
-		result:       result,
-		repoMu:       repoMu,
-		repo:         repo,
-		cache:        cache,
-		logger:       logger,
-		simplePrefix: simplePrefix,
-		originBranch: originBranch,
-	}, nil
+	return state, nil
 }
 
 func (s *state) close() error {
@@ -112,6 +92,22 @@ func (s *state) close() error {
 		return err
 	}
 	s.repo.Free()
+	return nil
+}
+
+func (s *state) flush() error {
+	if err := s.cache.flush(); err != nil {
+		return err
+	}
+
+	if s.config.Target != "" {
+		branch, err := s.repo.LookupBranch(s.config.Target, git.BranchLocal)
+		if err == nil {
+			branch.Delete()
+			branch.Free()
+		}
+	}
+
 	return nil
 }
 
