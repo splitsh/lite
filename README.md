@@ -14,8 +14,10 @@ synchronize a mono repository to many repositories.
 **splitsh-lite** is a sub-project with the goal of providing a faster replacement
 of the `git subtree split` command.
 
-If you want to learn more about monorepo vs manyrepos, watch this 4-minutes
-lightning talk I gave at dotScale... or the longer version from
+If you want to learn more about monorepo vs manyrepos, watch this 4-minute
+lightning talk I gave at dotScale
+(or [read the slides](https://speakerdeck.com/fabpot/a-monorepo-vs-manyrepos))...
+or watch the longer version from
 [DrupalCon](https://www.youtube.com/watch?v=4w3-f6Xhvu8).
 
 The main **splitsh-lite** feature is its ability to create a branch in a repository
