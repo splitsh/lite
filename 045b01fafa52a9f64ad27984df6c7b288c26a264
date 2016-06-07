@@ -1,0 +1,21 @@
+---------------------------------------------------------------------------
+
+by fabpot at 2016-06-07T05:13:51Z
+
+Are you sure?
+
+---------------------------------------------------------------------------
+
+by inalgnu at 2016-06-07T06:40:40Z
+
+yes, unless you already have the package dowloaded in your $GOROOT or $GOPATH otherwise go will throw an error :
+
+```bash
+can't load package: package github.com/splitsh/lite: cannot find package
+"github.com/splitsh/lite" in any of:
+
+      /usr/local/go/src/github.com/splitsh/lite (from $GOROOT)
+      /tmp/src/github.com/splitsh/lite (from $GOPATH)
+```
+
+in my case GOPATH is set to /tmp
