@@ -64,7 +64,7 @@ git add b/
 git commit -m"updated b" > /dev/null
 
 GIT_SUBTREE_SPLIT_SHA1=`git subtree split --prefix=b/ -q`
-GIT_SPLITSH_SHA1=`$GOPATH/src/github.com/splitsh/lite/lite --prefix=b/ --quiet`
+GIT_SPLITSH_SHA1=`$GOPATH/src/github.com/splitsh/lite/splitsh-lite --prefix=b/ --quiet`
 
 if [ "$GIT_SUBTREE_SPLIT_SHA1" == "$GIT_SUBTREE_SPLIT_SHA1" ]; then
     echo "OK ($GIT_SUBTREE_SPLIT_SHA1 == $GIT_SUBTREE_SPLIT_SHA1)"
@@ -74,7 +74,7 @@ else
 fi
 
 GIT_SUBTREE_SPLIT_SHA1=`git subtree split --prefix=b/ -q bff8cdfaaf78a8842b8d9241ccfd8fb6e026f508...`
-GIT_SPLITSH_SHA1=`$GOPATH/src/github.com/splitsh/lite/lite --prefix=b/ --quiet --commit=bff8cdfaaf78a8842b8d9241ccfd8fb6e026f508`
+GIT_SPLITSH_SHA1=`$GOPATH/src/github.com/splitsh/lite/splitsh-lite --prefix=b/ --quiet --commit=bff8cdfaaf78a8842b8d9241ccfd8fb6e026f508`
 
 if [ "$GIT_SUBTREE_SPLIT_SHA1" == "$GIT_SUBTREE_SPLIT_SHA1" ]; then
     echo "OK ($GIT_SUBTREE_SPLIT_SHA1 == $GIT_SUBTREE_SPLIT_SHA1)"
@@ -90,7 +90,7 @@ if [ ! -d Twig ]; then
     git clone https://github.com/twigphp/Twig > /dev/null
 fi
 GIT_SUBTREE_SPLIT_SHA1="ea449b0f2acba7d489a91f88154687250d2bdf42"
-GIT_SPLITSH_SHA1=`$GOPATH/src/github.com/splitsh/lite/lite --prefix=lib/ --origin=refs/tags/v1.24.1 --path=Twig --quiet --scratch`
+GIT_SPLITSH_SHA1=`$GOPATH/src/github.com/splitsh/lite/splitsh-lite --prefix=lib/ --origin=refs/tags/v1.24.1 --path=Twig --quiet --scratch`
 
 if [ "$GIT_SUBTREE_SPLIT_SHA1" == "$GIT_SUBTREE_SPLIT_SHA1" ]; then
     echo "OK ($GIT_SUBTREE_SPLIT_SHA1 == $GIT_SUBTREE_SPLIT_SHA1)"
