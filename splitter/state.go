@@ -2,13 +2,13 @@ package splitter
 
 import (
 	"fmt"
+	"github.com/libgit2/git2go"
 	"log"
 	"os"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
-
-	"github.com/libgit2/git2go"
 )
 
 type state struct {
@@ -111,6 +111,76 @@ func (s *state) flush() error {
 	return nil
 }
 
+func (s *state) findExistingSplits() (*git.Oid, error) {
+
+	if s.simplePrefix == "" {
+		if s.config.Debug {
+			s.logger.Printf("Elaborate prefix specification: skipping search for existing splits.\n")
+		}
+		return nil, nil
+	}
+	subtreeSignature := regexp.MustCompile("git-subtree-dir: " + s.simplePrefix)
+	splitPattern := regexp.MustCompile("git-subtree-split: ([[:xdigit:]]+)\\s")
+	preWalk, err := s.walker()
+	if err != nil {
+		return nil, fmt.Errorf("Could not pre-walk the repository: %s", err)
+	}
+	defer preWalk.Free()
+
+	var mergedAt *git.Commit
+	var priorSplit string
+	err = preWalk.Iterate(func(commit *git.Commit) bool {
+		defer commit.Free()
+		if s.config.Debug {
+			s.logger.Printf("Traversing commit: %s\n", commit.Id().String())
+		}
+		cmsg := commit.Message()
+		if subtreeSignature.MatchString(cmsg) {
+			if s.config.Debug {
+				s.logger.Printf("-- Found:\n%s\n", cmsg)
+			}
+			splitRecord := splitPattern.FindStringSubmatch(cmsg)
+			if splitRecord == nil {
+				if s.config.Debug {
+					s.logger.Printf("** Could not extract the previous split hash.\n")
+				}
+			} else {
+				mergedAt = commit
+				priorSplit = splitRecord[1]
+				if s.config.Debug {
+					s.logger.Printf("Previous split at: %s\n", priorSplit)
+				}
+			}
+			return false
+		}
+		return true
+	})
+	if priorSplit == "" {
+		if s.config.Debug {
+			s.logger.Printf("No prior splits found.")
+		}
+	} else {
+		var mergedHead *git.Oid
+		for n := mergedAt.ParentCount(); mergedHead == nil && n > 0; {
+			n--
+			parent := mergedAt.ParentId(n)
+			if parent.String() == priorSplit {
+				mergedHead = parent
+			}
+		}
+		if s.config.Debug {
+			s.logger.Printf("Stopping at commit: %s\n", mergedAt.Id().String())
+			if mergedHead == nil {
+				s.logger.Printf("Could not find the parent commit.\n")
+			} else {
+				s.logger.Printf("The parent commit exists: %s\n", mergedHead.String())
+			}
+		}
+		return mergedHead, err
+	}
+	return nil, err
+}
+
 func (s *state) split() error {
 	startTime := time.Now()
 	defer func() {
@@ -171,9 +241,73 @@ func (s *state) walker() (*git.RevWalk, error) {
 		return nil, fmt.Errorf("Impossible to determine split range: %s", err)
 	}
 
+	if s.config.Debug {
+		s.logger.Printf("Determined the split range.\n")
+	}
+
 	revWalk.Sorting(git.SortTopological | git.SortReverse)
 
 	return revWalk, nil
+}
+
+func (s *state) recoverHistory(oldMergedSplit *git.Oid) error {
+	revStroll, err := s.oldSplitStroller(oldMergedSplit)
+	if err != nil {
+		return fmt.Errorf("Impossible to walk the old merged split: %s", err)
+	}
+	defer revStroll.Free()
+
+	var iterationErr error
+	var lastRev *git.Oid
+	err = revStroll.Iterate(func(rev *git.Commit) bool {
+		defer rev.Free()
+		lastRev = rev.Id()
+
+		if s.config.Debug {
+			s.logger.Printf("Recovering old commit: %s\n", rev.Id().String())
+		}
+
+		var newrev *git.Oid
+		newrev, err = s.recoverRev(rev)
+		if err != nil {
+			iterationErr = err
+			return false
+		}
+
+		if newrev != nil {
+			s.result.moveHead(newrev)
+		}
+
+		return true
+	})
+	if err != nil {
+		return err
+	}
+	if iterationErr != nil {
+		return iterationErr
+	}
+
+	if lastRev != nil {
+		s.cache.setHead(lastRev)
+	}
+
+	return s.updateTarget()
+}
+
+func (s *state) oldSplitStroller(oldMergedSplit *git.Oid) (*git.RevWalk, error) {
+	revStroll, err := s.repo.Walk()
+	if err != nil {
+		return nil, fmt.Errorf("Cannot even start processing the old merged split: %s", err)
+	}
+
+	err = revStroll.Push(oldMergedSplit)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to traverse the old merged split: %s", err)
+	}
+
+	revStroll.Sorting(git.SortTopological | git.SortReverse)
+
+	return revStroll, nil
 }
 
 func (s *state) splitRev(rev *git.Commit) (*git.Oid, error) {
@@ -237,6 +371,69 @@ func (s *state) splitRev(rev *git.Commit) (*git.Oid, error) {
 
 	if created {
 		s.result.incCreated()
+	}
+
+	if err := s.cache.set(rev.Id(), newrev, created); err != nil {
+		return nil, err
+	}
+
+	return newrev, nil
+}
+
+func (s *state) recoverRev(rev *git.Commit) (*git.Oid, error) {
+	v := s.cache.get(rev.Id())
+	if v != nil {
+		if s.config.Debug {
+			s.logger.Printf("  [recovery] prior: %s\n", v.String())
+		}
+		return v, nil
+	}
+
+	var parents []*git.Oid
+	var n uint
+	for n = 0; n < rev.ParentCount(); n++ {
+		parents = append(parents, rev.ParentId(n))
+	}
+
+	if s.config.Debug {
+		debugMsg := "  [recovery] parents:"
+		for _, parent := range parents {
+			debugMsg += fmt.Sprintf(" %s", parent.String())
+		}
+		s.logger.Print(debugMsg)
+	}
+
+	newParents := s.cache.gets(parents)
+
+	if s.config.Debug {
+		debugMsg := "  [recovery] newparents:"
+		for _, parent := range newParents {
+			debugMsg += fmt.Sprintf(" %s", parent)
+		}
+		s.logger.Print(debugMsg)
+	}
+
+	tree, err := rev.Tree()
+	if err != nil {
+		return nil, err
+	}
+
+	if nil == tree {
+		return nil, nil
+	}
+	defer tree.Free()
+
+	if s.config.Debug {
+		s.logger.Printf("  [recovery] tree is: %s\n", tree.Id().String())
+	}
+
+	newrev, created, err := s.copyOrSkip(rev, tree, newParents)
+	if err != nil {
+		return nil, err
+	}
+
+	if s.config.Debug {
+		s.logger.Printf("  [recovery] newrev is: %s\n", newrev)
 	}
 
 	if err := s.cache.set(rev.Id(), newrev, created); err != nil {
@@ -527,6 +724,10 @@ func (s *state) pushRevs(revWalk *git.RevWalk) error {
 	var start *git.Oid
 	var err error
 	if s.config.Commit != "" {
+		if s.config.Debug {
+			s.logger.Printf("state.config.Commit: %s\n", s.config.Commit)
+		}
+
 		start, err = git.NewOid(s.config.Commit)
 		if err != nil {
 			return err
@@ -537,6 +738,9 @@ func (s *state) pushRevs(revWalk *git.RevWalk) error {
 
 	start = s.cache.getHead()
 	if start != nil {
+		if s.config.Debug {
+			s.logger.Printf("Found cached head: %v\n", start)
+		}
 		s.result.moveHead(s.cache.get(start))
 		// FIXME: CHECK that this is an ancestor of the branch?
 		return revWalk.PushRange(fmt.Sprintf("%s..%s", start, s.originBranch))
@@ -545,6 +749,9 @@ func (s *state) pushRevs(revWalk *git.RevWalk) error {
 	branch, err := s.repo.RevparseSingle(s.originBranch)
 	if err != nil {
 		return err
+	}
+	if s.config.Debug {
+		s.logger.Printf("revWalk.Push for %v\n", branch.Id())
 	}
 
 	return revWalk.Push(branch.Id())
