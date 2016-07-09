@@ -358,7 +358,7 @@ func (s *state) addPrefixToTree(tree *git.Tree, prefix string) (*git.Tree, error
 }
 
 func (s *state) copyOrSkip(rev *git.Commit, tree *git.Tree, newParents []*git.Oid) (*git.Oid, bool, error) {
-	var identical *git.Oid
+	var identical, nonIdentical *git.Oid
 	var gotParents []*git.Oid
 	var p []*git.Commit
 	for _, parent := range newParents {
@@ -373,6 +373,8 @@ func (s *state) copyOrSkip(rev *git.Commit, tree *git.Tree, newParents []*git.Oi
 		if 0 == ptree.Cmp(tree.Id()) {
 			// an identical parent could be used in place of this rev.
 			identical = parent
+		} else {
+			nonIdentical = parent
 		}
 
 		// sometimes both old parents map to the same newparent
@@ -396,7 +398,34 @@ func (s *state) copyOrSkip(rev *git.Commit, tree *git.Tree, newParents []*git.Oi
 		}
 	}
 
-	if nil != identical {
+	copyCommit := false
+	if s.config.Git > 2 && nil != identical && nil != nonIdentical {
+		revWalk, err := s.repo.Walk()
+		if err != nil {
+			return nil, false, fmt.Errorf("Impossible to walk the repository: %s", err)
+		}
+
+		s.repoMu.Lock()
+		defer s.repoMu.Unlock()
+
+		err = revWalk.PushRange(fmt.Sprintf("%s..%s", identical, nonIdentical))
+		if err != nil {
+			return nil, false, fmt.Errorf("Impossible to determine split range: %s", err)
+		}
+
+		err = revWalk.Iterate(func(rev *git.Commit) bool {
+			// we need to preserve history along the other branch
+			copyCommit = true
+			return false
+		})
+		if err != nil {
+			return nil, false, err
+		}
+
+		revWalk.Free()
+	}
+
+	if nil != identical && copyCommit == false {
 		return identical, false, nil
 	}
 
@@ -434,7 +463,7 @@ func (s *state) copyCommit(rev *git.Commit, tree *git.Tree, parents []*git.Commi
 	}
 
 	message := rev.Message()
-	if s.config.Legacy {
+	if s.config.Git == 1 {
 		message = s.legacyMessage(rev)
 	}
 

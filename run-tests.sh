@@ -85,6 +85,71 @@ fi
 
 cd ../
 
+
+rm -rf merge
+mkdir -p merge/src
+cd merge
+git init > /dev/null
+
+export GIT_AUTHOR_NAME="Sammy Cobol"
+export GIT_AUTHOR_EMAIL="<sammy.cobol@example.com>"
+export GIT_AUTHOR_DATE="Sat, 24 Nov 1973 19:01:01 +0200"
+export GIT_COMMITTER_NAME="Fred Foobar"
+export GIT_COMMITTER_EMAIL="<fred.foobar@example.com>"
+export GIT_COMMITTER_DATE="Sat, 24 Nov 1973 19:01:01 +0200"
+echo -e "a\n\nb\n\nc\n\n" > src/foo
+git add src/foo
+git commit -m"init" > /dev/null
+
+git co -b branch1 2> /dev/null
+export GIT_AUTHOR_DATE="Sat, 24 Nov 1973 19:02:02 +0200"
+export GIT_COMMITTER_DATE="Sat, 24 Nov 1973 19:02:02 +0200"
+echo -e "a\n\nb\nchange 2\nc\n\n" > src/foo
+git commit -a -m"change 2" > /dev/null
+
+export GIT_AUTHOR_DATE="Sat, 24 Nov 1973 19:02:02 +0200"
+export GIT_COMMITTER_DATE="Sat, 24 Nov 1973 19:02:02 +0200"
+echo -e "a\n\nb\nchange 2\nc\nchange 3\n" > src/foo
+git commit -a -m"change 3" > /dev/null
+
+git co master 2> /dev/null
+export GIT_AUTHOR_DATE="Sat, 24 Nov 1973 19:02:02 +0200"
+export GIT_COMMITTER_DATE="Sat, 24 Nov 1973 19:02:02 +0200"
+echo -e "a\nchange 1\nb\n\nc\n\n" > src/foo
+git commit -a -m"change 1" > /dev/null
+
+git co -b branch2 2> /dev/null
+export GIT_AUTHOR_DATE="Sat, 24 Nov 1973 19:02:02 +0200"
+export GIT_COMMITTER_DATE="Sat, 24 Nov 1973 19:02:02 +0200"
+echo -e "a\n\nb\nchange 2\nc\n\n" > src/foo
+git commit -a -m"change 2" > /dev/null
+
+git co master 2> /dev/null
+git co -b branch3 2> /dev/null
+git merge branch1 --no-edit > /dev/null
+git merge branch2 --no-edit -s ours > /dev/null
+
+GIT_SUBTREE_SPLIT_SHA1_2="a2c4245703f8dac149ab666242a12e1d4b2510d9"
+GIT_SUBTREE_SPLIT_SHA1_3="ba0dab2c4e99d68d11088f2c556af92851e93b14"
+GIT_SPLITSH_SHA1_2=`$GOPATH/src/github.com/splitsh/lite/lite --git="<2.8.0" --prefix=src/ --quiet`
+GIT_SPLITSH_SHA1_3=`$GOPATH/src/github.com/splitsh/lite/lite --prefix=src/ --quiet`
+
+if [ "$GIT_SUBTREE_SPLIT_SHA1_2" == "$GIT_SUBTREE_SPLIT_SHA1_2" ]; then
+    echo "OK ($GIT_SUBTREE_SPLIT_SHA1_2 == $GIT_SUBTREE_SPLIT_SHA1_2)"
+else
+    echo "OK ($GIT_SUBTREE_SPLIT_SHA1_2 != $GIT_SUBTREE_SPLIT_SHA1_2)"
+    exit 1
+fi
+
+if [ "$GIT_SUBTREE_SPLIT_SHA1_3" == "$GIT_SUBTREE_SPLIT_SHA1_3" ]; then
+    echo "OK ($GIT_SUBTREE_SPLIT_SHA1_3 == $GIT_SUBTREE_SPLIT_SHA1_3)"
+else
+    echo "OK ($GIT_SUBTREE_SPLIT_SHA1_3 != $GIT_SUBTREE_SPLIT_SHA1_3)"
+    exit 1
+fi
+
+cd ../
+
 # run on some Open-Source repositories
 if [ ! -d Twig ]; then
     git clone https://github.com/twigphp/Twig > /dev/null
