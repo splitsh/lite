@@ -116,9 +116,9 @@ Available options:
  * `--scratch` flushes the cache (useful when a branch is force pushed or in
    case of corruption)
 
- * `--legacy` simulates old versions of `git subtree split` where `sha1`s
-   for the split commits were computed differently (useful if you are switching
-   from the git command to **splitsh-lite**).
+ * `--git` simulates old versions of `git subtree split`. **splitsh** generates
+   the same `sha1`s as the latest version of Git by default (`latest`).
+   Simulate old versions of Git by using `<1.8.2` or `<2.8.0`.
 
 **splitsh** provides more features including a sanity checker, GitHub integration
 for real-time splitting, tagging management and synchronization, and more.

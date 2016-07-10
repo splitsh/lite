@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"path/filepath"
+	"strconv"
 	"time"
 
 	"github.com/boltdb/bolt"
@@ -57,9 +58,7 @@ func key(config *Config) []byte {
 		io.WriteString(h, "oldest")
 	}
 
-	if config.Legacy {
-		io.WriteString(h, "legacy")
-	}
+	io.WriteString(h, strconv.Itoa(config.Git))
 
 	for _, prefix := range config.Prefixes {
 		io.WriteString(h, prefix.From)

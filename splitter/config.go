@@ -22,9 +22,9 @@ type Config struct {
 	Origin   string
 	Commit   string
 	Target   string
+	Git      int
 	Debug    bool
 	Scratch  bool
-	Legacy   bool
 
 	// for advanced usage only
 	// naming and types subject to change anytime!
