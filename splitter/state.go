@@ -266,6 +266,11 @@ func (s *state) treeByPath(tree *git.Tree, prefix string) (*git.Tree, error) {
 		return nil, nil
 	}
 
+	if treeEntry.Type != git.ObjectTree {
+		// tree is not a tree (a directory for a gitmodule for instance), skip
+		return nil, nil
+	}
+
 	return s.repo.LookupTree(treeEntry.Id)
 }
 
