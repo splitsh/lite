@@ -37,7 +37,7 @@ func (p *prefixesFlag) Set(value string) error {
 }
 
 var prefixes prefixesFlag
-var origin, target, commit, path, git string
+var origin, target, commit, path, gitVersion string
 var scratch, debug, quiet, legacy, progress bool
 
 func init() {
@@ -50,7 +50,7 @@ func init() {
 	flag.BoolVar(&debug, "debug", false, "Enable the debug mode (optional)")
 	flag.BoolVar(&quiet, "quiet", false, "Suppress the output (optional)")
 	flag.BoolVar(&legacy, "legacy", false, "[DEPRECATED] Enable the legacy mode for projects migrating from an old version of git subtree split (optional)")
-	flag.StringVar(&git, "git", "latest", "Simulate a given version of Git (optional)")
+	flag.StringVar(&gitVersion, "git", "latest", "Simulate a given version of Git (optional)")
 	flag.BoolVar(&progress, "progress", false, "Show progress bar (optional, cannot be enabled when debug is enabled)")
 }
 
@@ -62,27 +62,20 @@ func main() {
 		os.Exit(1)
 	}
 
-	supportedGitVersions := map[string]int{"<1.8.2": 1, "<2.8.0": 2, "latest": 3}
-	gitVersion, ok := supportedGitVersions[git]
-	if !ok {
-		fmt.Println(`The --git flag can be "<1.8.2", "<2.8.0", or "latest"`)
-		os.Exit(1)
-	}
-
 	if legacy {
 		fmt.Fprintf(os.Stderr, `The --legacy option is deprecated (use --git="<1.8.2" instead)`)
-		gitVersion = 1
+		gitVersion = "<1.8.2"
 	}
 
 	config := &splitter.Config{
-		Path:     path,
-		Origin:   origin,
-		Prefixes: []*splitter.Prefix(prefixes),
-		Target:   target,
-		Commit:   commit,
-		Debug:    debug && !quiet,
-		Scratch:  scratch,
-		Git:      gitVersion,
+		Path:       path,
+		Origin:     origin,
+		Prefixes:   []*splitter.Prefix(prefixes),
+		Target:     target,
+		Commit:     commit,
+		Debug:      debug && !quiet,
+		Scratch:    scratch,
+		GitVersion: gitVersion,
 	}
 
 	result := &splitter.Result{}

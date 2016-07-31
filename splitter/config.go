@@ -17,14 +17,14 @@ type Prefix struct {
 
 // Config represents a split configuration
 type Config struct {
-	Prefixes []*Prefix
-	Path     string
-	Origin   string
-	Commit   string
-	Target   string
-	Git      int
-	Debug    bool
-	Scratch  bool
+	Prefixes   []*Prefix
+	Path       string
+	Origin     string
+	Commit     string
+	Target     string
+	GitVersion string
+	Debug      bool
+	Scratch    bool
 
 	// for advanced usage only
 	// naming and types subject to change anytime!
@@ -32,6 +32,13 @@ type Config struct {
 	DB     *bolt.DB
 	RepoMu *sync.Mutex
 	Repo   *git.Repository
+	Git    int
+}
+
+var supportedGitVersions = map[string]int{
+	"<1.8.2": 1,
+	"<2.8.0": 2,
+	"latest": 3,
 }
 
 // Split splits a configuration
@@ -53,6 +60,12 @@ func (config *Config) Validate() error {
 	if config.Target != "" && !git.ReferenceIsValidName(config.Target) {
 		return fmt.Errorf("The target is not a valid Git reference")
 	}
+
+	git, ok := supportedGitVersions[config.GitVersion]
+	if !ok {
+		return fmt.Errorf(`The git version can only be one of "<1.8.2", "<2.8.0", or "latest"`)
+	}
+	config.Git = git
 
 	return nil
 }
