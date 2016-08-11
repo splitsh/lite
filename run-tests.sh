@@ -101,7 +101,7 @@ echo -e "a\n\nb\n\nc\n\n" > src/foo
 git add src/foo
 git commit -m"init" > /dev/null
 
-git co -b branch1 2> /dev/null
+git checkout -b branch1 2> /dev/null
 export GIT_AUTHOR_DATE="Sat, 24 Nov 1973 19:02:02 +0200"
 export GIT_COMMITTER_DATE="Sat, 24 Nov 1973 19:02:02 +0200"
 echo -e "a\n\nb\nchange 2\nc\n\n" > src/foo
@@ -112,20 +112,20 @@ export GIT_COMMITTER_DATE="Sat, 24 Nov 1973 19:02:02 +0200"
 echo -e "a\n\nb\nchange 2\nc\nchange 3\n" > src/foo
 git commit -a -m"change 3" > /dev/null
 
-git co master 2> /dev/null
+git checkout master 2> /dev/null
 export GIT_AUTHOR_DATE="Sat, 24 Nov 1973 19:02:02 +0200"
 export GIT_COMMITTER_DATE="Sat, 24 Nov 1973 19:02:02 +0200"
 echo -e "a\nchange 1\nb\n\nc\n\n" > src/foo
 git commit -a -m"change 1" > /dev/null
 
-git co -b branch2 2> /dev/null
+git checkout -b branch2 2> /dev/null
 export GIT_AUTHOR_DATE="Sat, 24 Nov 1973 19:02:02 +0200"
 export GIT_COMMITTER_DATE="Sat, 24 Nov 1973 19:02:02 +0200"
 echo -e "a\n\nb\nchange 2\nc\n\n" > src/foo
 git commit -a -m"change 2" > /dev/null
 
-git co master 2> /dev/null
-git co -b branch3 2> /dev/null
+git checkout master 2> /dev/null
+git checkout -b branch3 2> /dev/null
 git merge branch1 --no-edit > /dev/null
 git merge branch2 --no-edit -s ours > /dev/null
 
