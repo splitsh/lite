@@ -467,7 +467,7 @@ func (s *state) copyCommit(rev *git.Commit, tree *git.Tree, parents []*git.Commi
 		s.logger.Printf("  copy commit \"%s\" \"%s\" \"%s\"\n", rev.Id().String(), tree.Id().String(), strings.Join(parentStrs, " "))
 	}
 
-	message := rev.Message()
+	message := rev.RawMessage()
 	if s.config.Git == 1 {
 		message = s.legacyMessage(rev)
 	}
