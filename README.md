@@ -1,5 +1,5 @@
-Monorepo to Manyrepos made easy
-===============================
+Monolithic Repositories to Many Repositories made easy
+======================================================
 
 **tl;dr**: **splitsh-lite** is a replacement for the `subtree split` Git
 built-in command that is much faster and has more features at the same time.
