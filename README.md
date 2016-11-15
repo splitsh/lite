@@ -4,7 +4,7 @@ Monorepo to Manyrepos made easy
 **tl;dr**: **splitsh-lite** is a replacement for the `subtree split` Git
 built-in command that is much faster and has more features at the same time.
 
-When starting a new project, do you store all the code in one monolith
+When starting a new project, do you store all the code in one monolithic
 repository? Or are you creating many repositories?
 
 Both strategies work well but both have drawbacks as well. **splitsh** helps use
