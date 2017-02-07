@@ -29,7 +29,7 @@ or watch the longer version from
 Installation
 ------------
 
-The fastest way to get started is to download a [binary][4] for your platform.
+The fastest way to get started is to download a [binary][1] for your platform.
 
 Usage
 -----
@@ -148,3 +148,5 @@ years but the tool is not yet ready for Open-Source. Stay tuned!
 If you think that your Open-Source project might benefit from the full version
 of splitsh, send me an email and I will consider splitting your project for
 free on my servers (like I do for Symfony and Laravel).
+
+[1]: https://github.com/splitsh/lite/releases
