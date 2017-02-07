@@ -26,7 +26,7 @@ func newState(config *Config, result *Result) (*state, error) {
 	var err error
 
 	// validate config
-	if err := config.Validate(); err != nil {
+	if err = config.Validate(); err != nil {
 		return nil, err
 	}
 
