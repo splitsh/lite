@@ -31,6 +31,8 @@ Installation
 
 The fastest way to get started is to download a [binary][1] for your platform.
 
+You can also [install it manually](#manual-installation).
+
 Usage
 -----
 
