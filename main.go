@@ -10,6 +10,10 @@ import (
 	"github.com/splitsh/lite/splitter"
 )
 
+var (
+	version = "dev"
+)
+
 type prefixesFlag []*splitter.Prefix
 
 func (p *prefixesFlag) String() string {
@@ -38,7 +42,7 @@ func (p *prefixesFlag) Set(value string) error {
 
 var prefixes prefixesFlag
 var origin, target, commit, path, gitVersion string
-var scratch, debug, quiet, legacy, progress bool
+var scratch, debug, quiet, legacy, progress, v bool
 
 func init() {
 	flag.Var(&prefixes, "prefix", "The directory(ies) to split")
@@ -52,10 +56,16 @@ func init() {
 	flag.BoolVar(&legacy, "legacy", false, "[DEPRECATED] Enable the legacy mode for projects migrating from an old version of git subtree split (optional)")
 	flag.StringVar(&gitVersion, "git", "latest", "Simulate a given version of Git (optional)")
 	flag.BoolVar(&progress, "progress", false, "Show progress bar (optional, cannot be enabled when debug is enabled)")
+	flag.BoolVar(&v, "version", false, "Show version")
 }
 
 func main() {
 	flag.Parse()
+
+	if v {
+		fmt.Printf("splitsh-lite version %s\n", version)
+		os.Exit(0)
+	}
 
 	if len(prefixes) == 0 {
 		fmt.Println("You must provide the directory to split via the --prefix flag")
