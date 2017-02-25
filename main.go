@@ -241,17 +241,19 @@ func runPublishCmd(pf *publishFlags) error {
 
 func (pf *publishFlags) syncHeads(subtree *splitter.Subtree) {
 	for _, head := range pf.getHeads() {
-		if !pf.repo.CheckRef("refs/tags/" + head) {
-			fmt.Fprintf(os.Stderr, " - skipping head %s (does not exist)\n", head)
+		fmt.Fprintf(os.Stderr, " syncing head %s", head)
+		if !pf.repo.CheckRef("refs/heads/" + head) {
+			fmt.Fprintln(os.Stderr, " - skipping, does not exist")
 			continue
 		}
-
-		fmt.Fprintf(os.Stderr, " - syncing branch %s\n", head)
 
 		config := pf.createConfig(subtree, "refs/heads/"+head)
 		sha1 := runSplitCmd(config, progress && !debug && !quiet, !debug)
 		if sha1 != "" {
 			pf.repo.Push(subtree.Target, sha1, "refs/heads/"+head, pf.dry)
+			fmt.Fprintln(os.Stderr, " - pushed")
+		} else {
+			fmt.Fprintln(os.Stderr, " - empty, not pushed")
 		}
 	}
 }
@@ -260,26 +262,26 @@ func (pf *publishFlags) syncTags(subtree *splitter.Subtree) {
 	targetTags := pf.repo.RemoteTags(subtree.Target)
 NextTag:
 	for _, tag := range pf.getTags() {
+		fmt.Fprintf(os.Stderr, " syncing tag %s", tag)
 		if !pf.repo.CheckRef("refs/tags/" + tag) {
-			fmt.Fprintf(os.Stderr, " - skipping tag %s (does not exist)\n", tag)
+			fmt.Fprintln(os.Stderr, " - skipping, does not exist")
 			continue
 		}
 
 		for _, t := range targetTags {
 			if t == tag {
-				fmt.Fprintf(os.Stderr, " - skipping tag %s (already synced)\n", tag)
+				fmt.Fprintln(os.Stderr, " - skipping, already synced")
 				continue NextTag
 			}
 		}
-
-		fmt.Fprintf(os.Stderr, " - syncing tag %s\n", tag)
 
 		config := pf.createConfig(subtree, "refs/tags/"+tag)
 		sha1 := runSplitCmd(config, progress && !debug && !quiet, !debug)
 		if sha1 != "" {
 			pf.repo.Push(subtree.Target, sha1, "refs/tags/"+tag, pf.dry)
+			fmt.Fprintln(os.Stderr, " - pushed")
 		} else {
-			fmt.Fprintf(os.Stderr, " - no contents\n")
+			fmt.Fprintln(os.Stderr, " - empty, not pushed")
 		}
 	}
 }
