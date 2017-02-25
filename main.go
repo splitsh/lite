@@ -3,10 +3,12 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"strings"
 	"time"
 
+	"github.com/splitsh/lite/git"
 	"github.com/splitsh/lite/splitter"
 )
 
@@ -42,25 +44,100 @@ func (p *prefixesFlag) Set(value string) error {
 
 var prefixes prefixesFlag
 var origin, target, commit, path, gitVersion string
-var scratch, debug, quiet, legacy, progress, v bool
+var scratch, debug, quiet, legacy, progress, v, update bool
 
-func init() {
-	flag.Var(&prefixes, "prefix", "The directory(ies) to split")
-	flag.StringVar(&origin, "origin", "HEAD", "The branch to split (optional, defaults to the current one)")
-	flag.StringVar(&target, "target", "", "The branch to create when split is finished (optional)")
-	flag.StringVar(&commit, "commit", "", "The commit at which to start the split (optional)")
-	flag.StringVar(&path, "path", ".", "The repository path (optional, current directory by default)")
-	flag.BoolVar(&scratch, "scratch", false, "Flush the cache (optional)")
-	flag.BoolVar(&debug, "debug", false, "Enable the debug mode (optional)")
-	flag.BoolVar(&quiet, "quiet", false, "Suppress the output (optional)")
-	flag.BoolVar(&legacy, "legacy", false, "[DEPRECATED] Enable the legacy mode for projects migrating from an old version of git subtree split (optional)")
-	flag.StringVar(&gitVersion, "git", "latest", "Simulate a given version of Git (optional)")
-	flag.BoolVar(&progress, "progress", false, "Show progress bar (optional, cannot be enabled when debug is enabled)")
-	flag.BoolVar(&v, "version", false, "Show version")
+type publishFlags struct {
+	path    string
+	update  bool
+	noHeads bool
+	heads   string
+	noTags  bool
+	tags    string
+	config  string
+	debug   bool
+	dry     bool
+
+	project *splitter.Project
+	repo    *git.Repo
 }
 
 func main() {
-	flag.Parse()
+	splitCmd := flag.NewFlagSet("split", flag.ExitOnError)
+	splitCmd.Var(&prefixes, "prefix", "The directory(ies) to split")
+	splitCmd.StringVar(&origin, "origin", "HEAD", "The branch to split (optional, defaults to the current one)")
+	splitCmd.StringVar(&target, "target", "", "The branch to create when split is finished (optional)")
+	splitCmd.StringVar(&commit, "commit", "", "The commit at which to start the split (optional)")
+	splitCmd.BoolVar(&scratch, "scratch", false, "Flush the cache (optional)")
+	splitCmd.BoolVar(&debug, "debug", false, "Enable the debug mode (optional)")
+	splitCmd.BoolVar(&quiet, "quiet", false, "Suppress the output (optional)")
+	splitCmd.BoolVar(&legacy, "legacy", false, "[DEPRECATED] Enable the legacy mode for projects migrating from an old version of git subtree split (optional)")
+	splitCmd.StringVar(&gitVersion, "git", "latest", "Simulate a given version of Git (optional)")
+	splitCmd.BoolVar(&progress, "progress", false, "Show progress bar (optional, cannot be enabled when debug is enabled)")
+	splitCmd.BoolVar(&v, "version", false, "Show version")
+	splitCmd.StringVar(&path, "path", ".", "The repository path (optional, current directory by default)")
+
+	initCmd := flag.NewFlagSet("init", flag.ExitOnError)
+	initCmd.BoolVar(&v, "version", false, "Show version")
+	initCmd.StringVar(&path, "path", ".", "The repository path (optional, current directory by default)")
+
+	updateCmd := flag.NewFlagSet("update", flag.ExitOnError)
+	updateCmd.BoolVar(&v, "version", false, "Show version")
+	updateCmd.StringVar(&path, "path", ".", "The repository path (optional, current directory by default)")
+
+	pf := &publishFlags{}
+	publishCmd := flag.NewFlagSet("publish", flag.ExitOnError)
+	publishCmd.BoolVar(&pf.update, "update", false, "")
+	publishCmd.BoolVar(&pf.noHeads, "no-heads", false, "")
+	publishCmd.StringVar(&pf.heads, "heads", "", "")
+	publishCmd.StringVar(&pf.config, "config", "", "")
+	publishCmd.BoolVar(&pf.noTags, "no-tags", false, "")
+	publishCmd.StringVar(&pf.tags, "tags", "", "")
+	publishCmd.BoolVar(&pf.debug, "debug", false, "")
+	publishCmd.BoolVar(&pf.dry, "dry-run", false, "")
+	publishCmd.BoolVar(&v, "version", false, "Show version")
+	publishCmd.StringVar(&pf.path, "path", ".", "The repository path (optional, current directory by default)")
+
+	if len(os.Args) < 2 {
+		fmt.Println("Subcommand is required (init, publish, update, or split)")
+		os.Exit(1)
+	}
+
+	switch os.Args[1] {
+	case "split":
+		splitCmd.Parse(os.Args[2:])
+	case "init":
+		initCmd.Parse(os.Args[2:])
+		if initCmd.NArg() != 1 {
+			fmt.Println("init requires the Git URL to be passed")
+			os.Exit(1)
+		}
+		fmt.Printf("Initializing splitsh from \"%s\" in \"%s\"\n", initCmd.Arg(0), path)
+		r := &git.Repo{Path: path}
+		if err := r.Clone(initCmd.Arg(0)); err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		os.Exit(0)
+	case "update":
+		updateCmd.Parse(os.Args[2:])
+		fmt.Printf("Updating repository in \"%s\"\n", path)
+		r := &git.Repo{Path: path}
+		if err := r.Update(); err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		os.Exit(0)
+	case "publish":
+		publishCmd.Parse(os.Args[2:])
+		if err := runPublishCmd(pf); err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		os.Exit(0)
+	default:
+		// FIXME: deprecated
+		splitCmd.Parse(os.Args[1:])
+	}
 
 	if v {
 		fmt.Fprintf(os.Stderr, "splitsh-lite version %s\n", version)
@@ -88,10 +165,14 @@ func main() {
 		GitVersion: gitVersion,
 	}
 
+	runSplitCmd(config, progress && !debug && !quiet, quiet)
+}
+
+func runSplitCmd(config *splitter.Config, progress, quiet bool) string {
 	result := &splitter.Result{}
 
 	var ticker *time.Ticker
-	if progress && !debug && !quiet {
+	if progress {
 		ticker = time.NewTicker(time.Millisecond * 50)
 		go func() {
 			for range ticker.C {
@@ -116,4 +197,114 @@ func main() {
 	if result.Head() != nil {
 		fmt.Println(result.Head().String())
 	}
+
+	return result.Head().String()
+}
+
+func runPublishCmd(pf *publishFlags) error {
+	var err error
+
+	config, err := ioutil.ReadFile(pf.config)
+	if err != nil {
+		return fmt.Errorf("Could not read config file: %s\n", err)
+	}
+
+	pf.project, err = splitter.NewProject(config)
+	if err != nil {
+		return fmt.Errorf("Could read project: %s\n", err)
+	}
+	pf.repo = &git.Repo{Path: pf.path}
+
+	if pf.update {
+		if err := pf.repo.Update(); err != nil {
+			return err
+		}
+	}
+
+	for name, subtree := range pf.project.Subtrees {
+		if err := pf.repo.CreateRemote(name, subtree.Target); err != nil {
+			return fmt.Errorf("Could create remote: %s\n", err)
+		}
+
+		for _, prefix := range subtree.Prefixes {
+			fmt.Printf("Syncing %s -> %s\n", prefix, subtree.Target)
+		}
+
+		pf.syncHeads(subtree)
+	}
+
+	return nil
+}
+
+func (pf *publishFlags) syncHeads(subtree *splitter.Subtree) {
+	for _, head := range pf.getHeads() {
+		if !pf.repo.CheckRef(head) {
+			continue
+		}
+
+		prefixes := []*splitter.Prefix{}
+		for _, prefix := range subtree.Prefixes {
+			parts := strings.Split(prefix, ":")
+			from := parts[0]
+			to := ""
+			if len(parts) > 1 {
+				to = parts[1]
+			}
+			prefixes = append(prefixes, &splitter.Prefix{From: from, To: to})
+		}
+		fmt.Printf(" - syncing branch %s\n", head)
+
+		config := &splitter.Config{
+			Path:       pf.path,
+			Origin:     "refs/heads/" + head,
+			Prefixes:   prefixes,
+			GitVersion: pf.project.GitVersion,
+			Debug:      pf.debug,
+		}
+
+		sha1 := runSplitCmd(config, progress && !debug && !quiet, quiet)
+		if sha1 != "" {
+			pf.repo.Push(subtree.Target, sha1, head, pf.dry)
+		}
+	}
+}
+
+func (pf *publishFlags) getHeads() []string {
+	var heads []string
+
+	if pf.noHeads {
+		return heads
+	}
+
+	if pf.heads != "" {
+		return strings.Split(pf.heads, " ")
+	}
+
+	for _, remote := range pf.repo.Remotes() {
+		if strings.HasPrefix(remote, "refs/heads/") {
+			heads = append(heads, remote)
+		}
+	}
+
+	return heads
+}
+
+func (pf *publishFlags) getTags() []string {
+	var tags []string
+
+	if pf.noTags {
+		return tags
+	}
+
+	if pf.tags != "" {
+		return strings.Split(pf.tags, " ")
+	}
+
+	for _, remote := range pf.repo.Remotes() {
+		if strings.HasPrefix(remote, "refs/tags/") {
+			tags = append(tags, remote)
+		}
+	}
+
+	return tags
 }

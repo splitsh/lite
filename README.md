@@ -53,6 +53,10 @@ cp splitsh-lite "$(git --exec-path)"/git-splitsh
 Usage
 -----
 
+The easiest way to use splitsh is to integrate it with Git:
+
+    cp bin/git-splitsh.sh "$(git --exec-path)"/git-splitsh
+
 Let's say you want to split the `lib/` directory of a repository to its own
 branch; from the "master" Git repository (bare or clone), run:
 
