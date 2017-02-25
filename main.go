@@ -98,7 +98,7 @@ func main() {
 	publishCmd.StringVar(&pf.path, "path", ".", "The repository path (optional, current directory by default)")
 
 	if len(os.Args) < 2 {
-		fmt.Println("Subcommand is required (init, publish, update, or split)")
+		fmt.Fprintln(os.Stderr, "Subcommand is required (init, publish, update, or split)")
 		os.Exit(1)
 	}
 
@@ -108,29 +108,29 @@ func main() {
 	case "init":
 		initCmd.Parse(os.Args[2:])
 		if initCmd.NArg() != 1 {
-			fmt.Println("init requires the Git URL to be passed")
+			fmt.Fprintln(os.Stderr, "init requires the Git URL to be passed")
 			os.Exit(1)
 		}
-		fmt.Printf("Initializing splitsh from \"%s\" in \"%s\"\n", initCmd.Arg(0), path)
+		fmt.Fprintf(os.Stderr, "Initializing splitsh from \"%s\" in \"%s\"\n", initCmd.Arg(0), path)
 		r := &git.Repo{Path: path}
 		if err := r.Clone(initCmd.Arg(0)); err != nil {
-			fmt.Println(err)
+			fmt.Fprintln(os.Stderr, err.Error())
 			os.Exit(1)
 		}
 		os.Exit(0)
 	case "update":
 		updateCmd.Parse(os.Args[2:])
-		fmt.Printf("Updating repository in \"%s\"\n", path)
+		fmt.Fprintf(os.Stderr, "Updating repository in \"%s\"\n", path)
 		r := &git.Repo{Path: path}
 		if err := r.Update(); err != nil {
-			fmt.Println(err)
+			fmt.Fprintln(os.Stderr, err.Error())
 			os.Exit(1)
 		}
 		os.Exit(0)
 	case "publish":
 		publishCmd.Parse(os.Args[2:])
 		if err := runPublishCmd(pf); err != nil {
-			fmt.Println(err)
+			fmt.Fprintln(os.Stderr, err.Error())
 			os.Exit(1)
 		}
 		os.Exit(0)
@@ -165,7 +165,10 @@ func main() {
 		GitVersion: gitVersion,
 	}
 
-	runSplitCmd(config, progress && !debug && !quiet, quiet)
+	sha1 := runSplitCmd(config, progress && !debug && !quiet, quiet)
+	if sha1 != "" {
+		fmt.Println(sha1)
+	}
 }
 
 func runSplitCmd(config *splitter.Config, progress, quiet bool) string {
@@ -194,10 +197,9 @@ func runSplitCmd(config *splitter.Config, progress, quiet bool) string {
 		fmt.Fprintf(os.Stderr, "%d commits created, %d commits traversed, in %s\n", result.Created(), result.Traversed(), result.Duration(time.Millisecond))
 	}
 
-	if result.Head() != nil {
-		fmt.Println(result.Head().String())
+	if result.Head() == nil {
+		return ""
 	}
-
 	return result.Head().String()
 }
 
@@ -227,10 +229,11 @@ func runPublishCmd(pf *publishFlags) error {
 		}
 
 		for _, prefix := range subtree.Prefixes {
-			fmt.Printf("Syncing %s -> %s\n", prefix, subtree.Target)
+			fmt.Fprintf(os.Stderr, "Syncing %s -> %s\n", prefix, subtree.Target)
 		}
 
 		pf.syncHeads(subtree)
+		pf.syncTags(subtree)
 	}
 
 	return nil
@@ -238,34 +241,67 @@ func runPublishCmd(pf *publishFlags) error {
 
 func (pf *publishFlags) syncHeads(subtree *splitter.Subtree) {
 	for _, head := range pf.getHeads() {
-		if !pf.repo.CheckRef(head) {
+		if !pf.repo.CheckRef("refs/tags/" + head) {
+			fmt.Fprintf(os.Stderr, " - skipping head %s (does not exist)\n", head)
 			continue
 		}
 
-		prefixes := []*splitter.Prefix{}
-		for _, prefix := range subtree.Prefixes {
-			parts := strings.Split(prefix, ":")
-			from := parts[0]
-			to := ""
-			if len(parts) > 1 {
-				to = parts[1]
-			}
-			prefixes = append(prefixes, &splitter.Prefix{From: from, To: to})
-		}
-		fmt.Printf(" - syncing branch %s\n", head)
+		fmt.Fprintf(os.Stderr, " - syncing branch %s\n", head)
 
-		config := &splitter.Config{
-			Path:       pf.path,
-			Origin:     "refs/heads/" + head,
-			Prefixes:   prefixes,
-			GitVersion: pf.project.GitVersion,
-			Debug:      pf.debug,
-		}
-
-		sha1 := runSplitCmd(config, progress && !debug && !quiet, quiet)
+		config := pf.createConfig(subtree, "refs/heads/"+head)
+		sha1 := runSplitCmd(config, progress && !debug && !quiet, !debug)
 		if sha1 != "" {
-			pf.repo.Push(subtree.Target, sha1, head, pf.dry)
+			pf.repo.Push(subtree.Target, sha1, "refs/heads/"+head, pf.dry)
 		}
+	}
+}
+
+func (pf *publishFlags) syncTags(subtree *splitter.Subtree) {
+	targetTags := pf.repo.RemoteTags(subtree.Target)
+NextTag:
+	for _, tag := range pf.getTags() {
+		if !pf.repo.CheckRef("refs/tags/" + tag) {
+			fmt.Fprintf(os.Stderr, " - skipping tag %s (does not exist)\n", tag)
+			continue
+		}
+
+		for _, t := range targetTags {
+			if t == tag {
+				fmt.Fprintf(os.Stderr, " - skipping tag %s (already synced)\n", tag)
+				continue NextTag
+			}
+		}
+
+		fmt.Fprintf(os.Stderr, " - syncing tag %s\n", tag)
+
+		config := pf.createConfig(subtree, "refs/tags/"+tag)
+		sha1 := runSplitCmd(config, progress && !debug && !quiet, !debug)
+		if sha1 != "" {
+			pf.repo.Push(subtree.Target, sha1, "refs/tags/"+tag, pf.dry)
+		} else {
+			fmt.Fprintf(os.Stderr, " - no contents\n")
+		}
+	}
+}
+
+func (pf *publishFlags) createConfig(subtree *splitter.Subtree, ref string) *splitter.Config {
+	prefixes := []*splitter.Prefix{}
+	for _, prefix := range subtree.Prefixes {
+		parts := strings.Split(prefix, ":")
+		from := parts[0]
+		to := ""
+		if len(parts) > 1 {
+			to = parts[1]
+		}
+		prefixes = append(prefixes, &splitter.Prefix{From: from, To: to})
+	}
+
+	return &splitter.Config{
+		Path:       pf.path,
+		Origin:     ref,
+		Prefixes:   prefixes,
+		GitVersion: pf.project.GitVersion,
+		Debug:      pf.debug,
 	}
 }
 
@@ -280,13 +316,7 @@ func (pf *publishFlags) getHeads() []string {
 		return strings.Split(pf.heads, " ")
 	}
 
-	for _, remote := range pf.repo.Remotes() {
-		if strings.HasPrefix(remote, "refs/heads/") {
-			heads = append(heads, remote)
-		}
-	}
-
-	return heads
+	return pf.repo.RemoteHeads("origin")
 }
 
 func (pf *publishFlags) getTags() []string {
@@ -300,11 +330,5 @@ func (pf *publishFlags) getTags() []string {
 		return strings.Split(pf.tags, " ")
 	}
 
-	for _, remote := range pf.repo.Remotes() {
-		if strings.HasPrefix(remote, "refs/tags/") {
-			tags = append(tags, remote)
-		}
-	}
-
-	return tags
+	return pf.repo.RemoteTags("origin")
 }
