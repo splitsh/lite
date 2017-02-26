@@ -63,20 +63,6 @@ func main() {
 	}
 
 	switch os.Args[1] {
-	case "init":
-		flags := initCmdFlagSet()
-		flags.Parse(os.Args[2:])
-		printVersion(v)
-		if flags.NArg() != 1 {
-			fmt.Fprintln(os.Stderr, "The \"init\" command requires the repository Git URL")
-			os.Exit(1)
-		}
-		fmt.Fprintf(os.Stderr, "Initializing splitsh from \"%s\" in \"%s\"\n", flags.Arg(0), path)
-		r := &git.Repo{Path: path}
-		if err := r.Clone(flags.Arg(0)); err != nil {
-			fmt.Fprintln(os.Stderr, err.Error())
-			os.Exit(1)
-		}
 	case "publish":
 		run := &splitter.Run{}
 		publishCmdFlagSet(run).Parse(os.Args[2:])
@@ -126,13 +112,6 @@ func printVersion(v bool) {
 		fmt.Fprintf(os.Stderr, "splitsh-lite version %s\n", version)
 		os.Exit(0)
 	}
-}
-
-func initCmdFlagSet() *flag.FlagSet {
-	initCmd := flag.NewFlagSet("init", flag.ExitOnError)
-	initCmd.BoolVar(&v, "version", false, "Show version")
-	initCmd.StringVar(&path, "path", ".", "The repository path (optional, current directory by default)")
-	return initCmd
 }
 
 func publishCmdFlagSet(run *splitter.Run) *flag.FlagSet {

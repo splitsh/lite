@@ -94,17 +94,6 @@ func (r *Repo) CheckRef(head string) bool {
 	return true
 }
 
-// Clone clones a given URL
-func (r *Repo) Clone(URL string) error {
-	cmd := exec.Command("git", "clone", "--bare", "-q", URL, r.Path)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("Could not clone repository: %s\n", err)
-	}
-	return nil
-}
-
 // Update fetches changes on the origin
 func (r *Repo) Update() error {
 	cmd := exec.Command("git", "fetch", "-q", "-t", "origin")
