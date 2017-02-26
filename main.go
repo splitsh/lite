@@ -57,42 +57,6 @@ type publishFlags struct {
 }
 
 func main() {
-	config := &splitter.Config{}
-	splitCmd := flag.NewFlagSet("split", flag.ExitOnError)
-	splitCmd.Var(&prefixes, "prefix", "The directory(ies) to split")
-	splitCmd.StringVar(&config.Origin, "origin", "HEAD", "The branch to split (optional, defaults to the current one)")
-	splitCmd.StringVar(&config.Target, "target", "", "The branch to create when split is finished (optional)")
-	splitCmd.StringVar(&config.Commit, "commit", "", "The commit at which to start the split (optional)")
-	splitCmd.BoolVar(&config.Scratch, "scratch", false, "Flush the cache (optional)")
-	splitCmd.BoolVar(&config.Debug, "debug", false, "Enable the debug mode (optional)")
-	splitCmd.BoolVar(&legacy, "legacy", false, "[DEPRECATED] Enable the legacy mode for projects migrating from an old version of git subtree split (optional)")
-	splitCmd.StringVar(&config.GitVersion, "git", "latest", "Simulate a given version of Git (optional)")
-	splitCmd.BoolVar(&progress, "progress", false, "Show progress bar (optional, cannot be enabled when debug is enabled)")
-	splitCmd.BoolVar(&v, "version", false, "Show version")
-	splitCmd.StringVar(&config.Path, "path", ".", "The repository path (optional, current directory by default)")
-
-	initCmd := flag.NewFlagSet("init", flag.ExitOnError)
-	initCmd.BoolVar(&v, "version", false, "Show version")
-	initCmd.StringVar(&path, "path", ".", "The repository path (optional, current directory by default)")
-
-	updateCmd := flag.NewFlagSet("update", flag.ExitOnError)
-	updateCmd.BoolVar(&v, "version", false, "Show version")
-	updateCmd.StringVar(&path, "path", ".", "The repository path (optional, current directory by default)")
-
-	run := &splitter.Run{}
-	publishCmd := flag.NewFlagSet("publish", flag.ExitOnError)
-	publishCmd.BoolVar(&run.Update, "update", false, "")
-	publishCmd.BoolVar(&run.NoHeads, "no-heads", false, "")
-	publishCmd.StringVar(&run.Heads, "heads", "", "")
-	publishCmd.StringVar(&run.Config, "config", "", "")
-	publishCmd.BoolVar(&run.NoTags, "no-tags", false, "")
-	publishCmd.StringVar(&run.Tags, "tags", "", "")
-	publishCmd.BoolVar(&run.Debug, "debug", false, "")
-	publishCmd.BoolVar(&run.DryRun, "dry-run", false, "")
-	publishCmd.BoolVar(&run.Progress, "progress", false, "")
-	publishCmd.BoolVar(&v, "version", false, "Show version")
-	publishCmd.StringVar(&run.Path, "path", ".", "The repository path (optional, current directory by default)")
-
 	if len(os.Args) < 2 {
 		fmt.Fprintln(os.Stderr, "Subcommand is required (init, publish, update, or split)")
 		os.Exit(1)
@@ -100,29 +64,32 @@ func main() {
 
 	switch os.Args[1] {
 	case "init":
-		initCmd.Parse(os.Args[2:])
-		if initCmd.NArg() != 1 {
+		flags := initCmdFlagSet()
+		flags.Parse(os.Args[2:])
+		printVersion(v)
+		if flags.NArg() != 1 {
 			fmt.Fprintln(os.Stderr, "init requires the Git URL to be passed")
 			os.Exit(1)
 		}
-		fmt.Fprintf(os.Stderr, "Initializing splitsh from \"%s\" in \"%s\"\n", initCmd.Arg(0), path)
+		fmt.Fprintf(os.Stderr, "Initializing splitsh from \"%s\" in \"%s\"\n", flags.Arg(0), path)
 		r := &git.Repo{Path: path}
-		if err := r.Clone(initCmd.Arg(0)); err != nil {
+		if err := r.Clone(flags.Arg(0)); err != nil {
 			fmt.Fprintln(os.Stderr, err.Error())
 			os.Exit(1)
 		}
-		os.Exit(0)
 	case "update":
-		updateCmd.Parse(os.Args[2:])
+		updateCmdFlagSet().Parse(os.Args[2:])
+		printVersion(v)
 		fmt.Fprintf(os.Stderr, "Updating repository in \"%s\"\n", path)
 		r := &git.Repo{Path: path}
 		if err := r.Update(); err != nil {
 			fmt.Fprintln(os.Stderr, err.Error())
 			os.Exit(1)
 		}
-		os.Exit(0)
 	case "publish":
-		publishCmd.Parse(os.Args[2:])
+		run := &splitter.Run{}
+		publishCmdFlagSet(run).Parse(os.Args[2:])
+		printVersion(v)
 		if run.Config == "" {
 			fmt.Fprintln(os.Stderr, "You must provide the configuration via the --config flag")
 			os.Exit(1)
@@ -131,19 +98,20 @@ func main() {
 			fmt.Fprintln(os.Stderr, err.Error())
 			os.Exit(1)
 		}
-		os.Exit(0)
 	case "split":
-		splitCmd.Parse(os.Args[2:])
+		config := &splitter.Config{}
+		splitCmdFlagSet(config).Parse(os.Args[2:])
+		printVersion(v)
+		runSplitCmd(config)
 	default:
-		// FIXME: deprecated
-		splitCmd.Parse(os.Args[1:])
+		config := &splitter.Config{}
+		splitCmdFlagSet(config).Parse(os.Args[1:])
+		printVersion(v)
+		runSplitCmd(config)
 	}
+}
 
-	if v {
-		fmt.Fprintf(os.Stderr, "splitsh-lite version %s\n", version)
-		os.Exit(0)
-	}
-
+func runSplitCmd(config *splitter.Config) {
 	if len(prefixes) == 0 {
 		fmt.Fprintln(os.Stderr, "You must provide the directory to split via the --prefix flag")
 		os.Exit(1)
@@ -160,4 +128,57 @@ func main() {
 	if sha1 != "" {
 		fmt.Println(sha1)
 	}
+}
+
+func printVersion(v bool) {
+	if v {
+		fmt.Fprintf(os.Stderr, "splitsh-lite version %s\n", version)
+		os.Exit(0)
+	}
+}
+
+func initCmdFlagSet() *flag.FlagSet {
+	initCmd := flag.NewFlagSet("init", flag.ExitOnError)
+	initCmd.BoolVar(&v, "version", false, "Show version")
+	initCmd.StringVar(&path, "path", ".", "The repository path (optional, current directory by default)")
+	return initCmd
+}
+
+func updateCmdFlagSet() *flag.FlagSet {
+	updateCmd := flag.NewFlagSet("update", flag.ExitOnError)
+	updateCmd.BoolVar(&v, "version", false, "Show version")
+	updateCmd.StringVar(&path, "path", ".", "The repository path (optional, current directory by default)")
+	return updateCmd
+}
+
+func publishCmdFlagSet(run *splitter.Run) *flag.FlagSet {
+	publishCmd := flag.NewFlagSet("publish", flag.ExitOnError)
+	publishCmd.BoolVar(&run.Update, "update", false, "")
+	publishCmd.BoolVar(&run.NoHeads, "no-heads", false, "")
+	publishCmd.StringVar(&run.Heads, "heads", "", "")
+	publishCmd.StringVar(&run.Config, "config", "", "")
+	publishCmd.BoolVar(&run.NoTags, "no-tags", false, "")
+	publishCmd.StringVar(&run.Tags, "tags", "", "")
+	publishCmd.BoolVar(&run.Debug, "debug", false, "")
+	publishCmd.BoolVar(&run.DryRun, "dry-run", false, "")
+	publishCmd.BoolVar(&run.Progress, "progress", false, "")
+	publishCmd.BoolVar(&v, "version", false, "Show version")
+	publishCmd.StringVar(&run.Path, "path", ".", "The repository path (optional, current directory by default)")
+	return publishCmd
+}
+
+func splitCmdFlagSet(config *splitter.Config) *flag.FlagSet {
+	splitCmd := flag.NewFlagSet("split", flag.ExitOnError)
+	splitCmd.Var(&prefixes, "prefix", "The directory(ies) to split")
+	splitCmd.StringVar(&config.Origin, "origin", "HEAD", "The branch to split (optional, defaults to the current one)")
+	splitCmd.StringVar(&config.Target, "target", "", "The branch to create when split is finished (optional)")
+	splitCmd.StringVar(&config.Commit, "commit", "", "The commit at which to start the split (optional)")
+	splitCmd.BoolVar(&config.Scratch, "scratch", false, "Flush the cache (optional)")
+	splitCmd.BoolVar(&config.Debug, "debug", false, "Enable the debug mode (optional)")
+	splitCmd.BoolVar(&legacy, "legacy", false, "[DEPRECATED] Enable the legacy mode for projects migrating from an old version of git subtree split (optional)")
+	splitCmd.StringVar(&config.GitVersion, "git", "latest", "Simulate a given version of Git (optional)")
+	splitCmd.BoolVar(&progress, "progress", false, "Show progress bar (optional, cannot be enabled when debug is enabled)")
+	splitCmd.BoolVar(&v, "version", false, "Show version")
+	splitCmd.StringVar(&config.Path, "path", ".", "The repository path (optional, current directory by default)")
+	return splitCmd
 }
