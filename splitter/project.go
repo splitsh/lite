@@ -15,9 +15,8 @@ const (
     "title": "Project configuration",
     "type" : "object",
     "additionalProperties": false,
-    "required": ["git-version", "origin", "subtrees"],
+    "required": ["git-version", "subtrees"],
     "properties": {
-        "origin": { "type": "string" },
         "git-version": { "type": "string" },
         "subtrees": {
             "type": "object",
@@ -44,7 +43,6 @@ const (
 
 // Project represents a project
 type Project struct {
-	Origin     string
 	Subtrees   map[string]*Subtree `json:"subtrees"`
 	GitVersion string              `json:"git-version"`
 }
