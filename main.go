@@ -68,7 +68,7 @@ func main() {
 		flags.Parse(os.Args[2:])
 		printVersion(v)
 		if flags.NArg() != 1 {
-			fmt.Fprintln(os.Stderr, "init requires the Git URL to be passed")
+			fmt.Fprintln(os.Stderr, "The \"init\" command requires the repository Git URL")
 			os.Exit(1)
 		}
 		fmt.Fprintf(os.Stderr, "Initializing splitsh from \"%s\" in \"%s\"\n", flags.Arg(0), path)
@@ -153,15 +153,15 @@ func updateCmdFlagSet() *flag.FlagSet {
 
 func publishCmdFlagSet(run *splitter.Run) *flag.FlagSet {
 	publishCmd := flag.NewFlagSet("publish", flag.ExitOnError)
-	publishCmd.BoolVar(&run.Update, "update", false, "")
-	publishCmd.BoolVar(&run.NoHeads, "no-heads", false, "")
-	publishCmd.StringVar(&run.Heads, "heads", "", "")
-	publishCmd.StringVar(&run.Config, "config", "", "")
-	publishCmd.BoolVar(&run.NoTags, "no-tags", false, "")
-	publishCmd.StringVar(&run.Tags, "tags", "", "")
-	publishCmd.BoolVar(&run.Debug, "debug", false, "")
-	publishCmd.BoolVar(&run.DryRun, "dry-run", false, "")
-	publishCmd.BoolVar(&run.Progress, "progress", false, "")
+	publishCmd.BoolVar(&run.Update, "update", false, "Fetches origin changes")
+	publishCmd.BoolVar(&run.NoHeads, "no-heads", false, "Do not publish any heads")
+	publishCmd.StringVar(&run.Heads, "heads", "", "Only publish for listed heads instead of all heads")
+	publishCmd.StringVar(&run.Config, "config", "", "JSON file path for the configuration")
+	publishCmd.BoolVar(&run.NoTags, "no-tags", false, "Do not publish any tags")
+	publishCmd.StringVar(&run.Tags, "tags", "", "Only publish for listed tags instead of all tags")
+	publishCmd.BoolVar(&run.Debug, "debug", false, "Display debug information")
+	publishCmd.BoolVar(&run.DryRun, "dry-run", false, "Do everything except actually send the updates")
+	publishCmd.BoolVar(&run.Progress, "progress", false, "Display splitting progress information")
 	publishCmd.BoolVar(&v, "version", false, "Show version")
 	publishCmd.StringVar(&run.Path, "path", ".", "The repository path (optional, current directory by default)")
 	return publishCmd
