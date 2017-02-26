@@ -10,10 +10,6 @@ import (
 	"github.com/splitsh/lite/splitter"
 )
 
-var (
-	version = "dev"
-)
-
 type prefixesFlag []*splitter.Prefix
 
 func (p *prefixesFlag) String() string {
@@ -40,9 +36,10 @@ func (p *prefixesFlag) Set(value string) error {
 	return nil
 }
 
+var version = "dev"
 var prefixes prefixesFlag
 var origin, target, commit, path, gitVersion string
-var scratch, debug, quiet, legacy, progress, v, update bool
+var scratch, debug, legacy, progress, v, update bool
 
 type publishFlags struct {
 	path    string
@@ -60,19 +57,19 @@ type publishFlags struct {
 }
 
 func main() {
+	config := &splitter.Config{}
 	splitCmd := flag.NewFlagSet("split", flag.ExitOnError)
 	splitCmd.Var(&prefixes, "prefix", "The directory(ies) to split")
-	splitCmd.StringVar(&origin, "origin", "HEAD", "The branch to split (optional, defaults to the current one)")
-	splitCmd.StringVar(&target, "target", "", "The branch to create when split is finished (optional)")
-	splitCmd.StringVar(&commit, "commit", "", "The commit at which to start the split (optional)")
-	splitCmd.BoolVar(&scratch, "scratch", false, "Flush the cache (optional)")
-	splitCmd.BoolVar(&debug, "debug", false, "Enable the debug mode (optional)")
-	splitCmd.BoolVar(&quiet, "quiet", false, "Suppress the output (optional)")
+	splitCmd.StringVar(&config.Origin, "origin", "HEAD", "The branch to split (optional, defaults to the current one)")
+	splitCmd.StringVar(&config.Target, "target", "", "The branch to create when split is finished (optional)")
+	splitCmd.StringVar(&config.Commit, "commit", "", "The commit at which to start the split (optional)")
+	splitCmd.BoolVar(&config.Scratch, "scratch", false, "Flush the cache (optional)")
+	splitCmd.BoolVar(&config.Debug, "debug", false, "Enable the debug mode (optional)")
 	splitCmd.BoolVar(&legacy, "legacy", false, "[DEPRECATED] Enable the legacy mode for projects migrating from an old version of git subtree split (optional)")
-	splitCmd.StringVar(&gitVersion, "git", "latest", "Simulate a given version of Git (optional)")
+	splitCmd.StringVar(&config.GitVersion, "git", "latest", "Simulate a given version of Git (optional)")
 	splitCmd.BoolVar(&progress, "progress", false, "Show progress bar (optional, cannot be enabled when debug is enabled)")
 	splitCmd.BoolVar(&v, "version", false, "Show version")
-	splitCmd.StringVar(&path, "path", ".", "The repository path (optional, current directory by default)")
+	splitCmd.StringVar(&config.Path, "path", ".", "The repository path (optional, current directory by default)")
 
 	initCmd := flag.NewFlagSet("init", flag.ExitOnError)
 	initCmd.BoolVar(&v, "version", false, "Show version")
@@ -126,6 +123,10 @@ func main() {
 		os.Exit(0)
 	case "publish":
 		publishCmd.Parse(os.Args[2:])
+		if run.Config == "" {
+			fmt.Fprintln(os.Stderr, "You must provide the configuration via the --config flag")
+			os.Exit(1)
+		}
 		if err := run.Sync(); err != nil {
 			fmt.Fprintln(os.Stderr, err.Error())
 			os.Exit(1)
@@ -153,21 +154,10 @@ func main() {
 		gitVersion = "<1.8.2"
 	}
 
-	/*
-		config := &splitter.Config{
-			Path:       path,
-			Origin:     origin,
-			Prefixes:   []*splitter.Prefix(prefixes),
-			Target:     target,
-			Commit:     commit,
-			Debug:      debug && !quiet,
-			Scratch:    scratch,
-			GitVersion: gitVersion,
-		}
-
-			sha1 := runSplitCmd(config, progress && !debug && !quiet, quiet)
-			if sha1 != "" {
-				fmt.Println(sha1)
-			}
-	*/
+	config.Prefixes = []*splitter.Prefix(prefixes)
+	sha1 := config.SplitWithFeedback(progress && !config.Debug)
+	fmt.Fprintln(os.Stderr, "")
+	if sha1 != "" {
+		fmt.Println(sha1)
+	}
 }

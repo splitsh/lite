@@ -3,7 +3,9 @@ package splitter
 import (
 	"fmt"
 	"log"
+	"os"
 	"sync"
+	"time"
 
 	"github.com/boltdb/bolt"
 	"github.com/libgit2/git2go"
@@ -42,13 +44,48 @@ var supportedGitVersions = map[string]int{
 }
 
 // Split splits a configuration
-func Split(config *Config, result *Result) error {
+func (config *Config) Split(result *Result) error {
 	state, err := newState(config, result)
 	if err != nil {
 		return err
 	}
 	defer state.close()
 	return state.split()
+}
+
+// SplitWithFeedback splits a configuration with feedback on the CLI
+func (config *Config) SplitWithFeedback(progress bool) string {
+	result := &Result{}
+
+	var ticker *time.Ticker
+	if progress {
+		ticker = time.NewTicker(time.Millisecond * 50)
+		go func() {
+			for range ticker.C {
+				msg := fmt.Sprintf("splitting %d commits, %d created", result.Traversed(), result.Created())
+				fmt.Fprintf(os.Stderr, "%s\033[K\033[%dD", msg, len(msg))
+			}
+		}()
+	} else {
+		fmt.Fprintf(os.Stderr, "splitting\033[%dD", len("splitting"))
+	}
+
+	if err := config.Split(result); err != nil {
+		fmt.Fprintln(os.Stderr, err.Error())
+		os.Exit(1)
+	}
+
+	if ticker != nil {
+		ticker.Stop()
+		fmt.Fprint(os.Stderr, "\033[K")
+	}
+
+	fmt.Fprintf(os.Stderr, "split %d commits, %d created, in %s", result.Traversed(), result.Created(), result.Duration(time.Millisecond))
+
+	if result.Head() == nil {
+		return ""
+	}
+	return result.Head().String()
 }
 
 // Validate validates the configuration

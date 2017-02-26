@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/splitsh/lite/git"
 )
@@ -63,9 +62,9 @@ func (r *Run) syncHeads(project *Project, subtree *Subtree) {
 			continue
 		}
 
+		fmt.Fprint(os.Stderr, " > ")
 		config := r.createConfig(project, subtree, "refs/heads/"+head)
-		sha1 := r.Run(config)
-		if sha1 != "" {
+		if sha1 := config.SplitWithFeedback(r.Progress); sha1 != "" {
 			fmt.Fprint(os.Stderr, " > pushing")
 			r.repo.Push(subtree.Target, sha1, "refs/heads/"+head, r.DryRun)
 			fmt.Fprintln(os.Stderr, " > pushed")
@@ -92,9 +91,9 @@ NextTag:
 			}
 		}
 
+		fmt.Fprint(os.Stderr, " > ")
 		config := r.createConfig(project, subtree, "refs/tags/"+tag)
-		sha1 := r.Run(config)
-		if sha1 != "" {
+		if sha1 := config.SplitWithFeedback(r.Progress); sha1 != "" {
 			fmt.Fprint(os.Stderr, " > pushing")
 			r.repo.Push(subtree.Target, sha1, "refs/tags/"+tag, r.DryRun)
 			fmt.Fprintln(os.Stderr, " > pushed")
@@ -102,43 +101,6 @@ NextTag:
 			fmt.Fprintln(os.Stderr, " > empty, not pushed")
 		}
 	}
-}
-
-// Run splits a given config
-func (r *Run) Run(config *Config) string {
-	result := &Result{}
-
-	var ticker *time.Ticker
-	if r.Progress {
-		ticker = time.NewTicker(time.Millisecond * 50)
-		go func() {
-			for range ticker.C {
-				msg := fmt.Sprintf(" > splitting %d commits, %d created", result.Traversed(), result.Created())
-				fmt.Fprintf(os.Stderr, "%s\033[K\033[%dD", msg, len(msg))
-			}
-		}()
-	} else {
-		fmt.Fprint(os.Stderr, " > splitting")
-	}
-
-	if err := Split(config, result); err != nil {
-		fmt.Fprintln(os.Stderr, err.Error())
-		os.Exit(1)
-	}
-
-	if ticker != nil {
-		ticker.Stop()
-		fmt.Fprint(os.Stderr, "\033[K")
-	}
-
-	if r.Debug || r.Progress {
-		fmt.Fprintf(os.Stderr, " > split %d commits, %d created, in %s", result.Traversed(), result.Created(), result.Duration(time.Millisecond))
-	}
-
-	if result.Head() == nil {
-		return ""
-	}
-	return result.Head().String()
 }
 
 func (r *Run) createConfig(project *Project, subtree *Subtree, ref string) *Config {
