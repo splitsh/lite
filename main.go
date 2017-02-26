@@ -77,15 +77,6 @@ func main() {
 			fmt.Fprintln(os.Stderr, err.Error())
 			os.Exit(1)
 		}
-	case "update":
-		updateCmdFlagSet().Parse(os.Args[2:])
-		printVersion(v)
-		fmt.Fprintf(os.Stderr, "Updating repository in \"%s\"\n", path)
-		r := &git.Repo{Path: path}
-		if err := r.Update(); err != nil {
-			fmt.Fprintln(os.Stderr, err.Error())
-			os.Exit(1)
-		}
 	case "publish":
 		run := &splitter.Run{}
 		publishCmdFlagSet(run).Parse(os.Args[2:])
@@ -144,16 +135,9 @@ func initCmdFlagSet() *flag.FlagSet {
 	return initCmd
 }
 
-func updateCmdFlagSet() *flag.FlagSet {
-	updateCmd := flag.NewFlagSet("update", flag.ExitOnError)
-	updateCmd.BoolVar(&v, "version", false, "Show version")
-	updateCmd.StringVar(&path, "path", ".", "The repository path (optional, current directory by default)")
-	return updateCmd
-}
-
 func publishCmdFlagSet(run *splitter.Run) *flag.FlagSet {
 	publishCmd := flag.NewFlagSet("publish", flag.ExitOnError)
-	publishCmd.BoolVar(&run.Update, "update", false, "Fetches origin changes")
+	publishCmd.BoolVar(&run.NoUpdate, "no-update", false, "Do not fetch origin changes")
 	publishCmd.BoolVar(&run.NoHeads, "no-heads", false, "Do not publish any heads")
 	publishCmd.StringVar(&run.Heads, "heads", "", "Only publish for listed heads instead of all heads")
 	publishCmd.StringVar(&run.Config, "config", "", "JSON file path for the configuration")

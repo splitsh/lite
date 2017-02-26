@@ -12,7 +12,7 @@ import (
 // Run represents a run from the CLI
 type Run struct {
 	Path     string
-	Update   bool
+	NoUpdate bool
 	NoHeads  bool
 	Heads    string
 	NoTags   bool
@@ -33,7 +33,8 @@ func (r *Run) Sync() error {
 	}
 	r.repo = &git.Repo{Path: r.Path}
 
-	if r.Update {
+	if !r.NoUpdate {
+		fmt.Fprintln(os.Stderr, "Fetching changes from origin")
 		if err := r.repo.Update(); err != nil {
 			return err
 		}
