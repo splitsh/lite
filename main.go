@@ -58,12 +58,11 @@ type publishFlags struct {
 
 func main() {
 	if len(os.Args) < 2 {
-		fmt.Fprintln(os.Stderr, "Subcommand is required (init, publish, update, or split)")
+		fmt.Fprintln(os.Stderr, "Subcommand is required (publish or split)")
 		os.Exit(1)
 	}
 
-	switch os.Args[1] {
-	case "publish":
+	if os.Args[1] == "publish" {
 		run := &splitter.Run{}
 		publishCmdFlagSet(run).Parse(os.Args[2:])
 		printVersion(v)
@@ -75,16 +74,14 @@ func main() {
 			fmt.Fprintln(os.Stderr, err.Error())
 			os.Exit(1)
 		}
-	case "split":
+	} else if os.Args[1] == "split" {
 		config := &splitter.Config{}
 		splitCmdFlagSet(config).Parse(os.Args[2:])
 		printVersion(v)
 		runSplitCmd(config)
-	default:
-		config := &splitter.Config{}
-		splitCmdFlagSet(config).Parse(os.Args[1:])
-		printVersion(v)
-		runSplitCmd(config)
+	} else {
+		fmt.Fprintln(os.Stderr, "Unknown command, should be publish or split")
+		os.Exit(1)
 	}
 }
 
