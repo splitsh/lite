@@ -398,7 +398,6 @@ func (s *state) copyOrSkip(rev *git.Commit, tree *git.Tree, newParents []*git.Oi
 			if err != nil {
 				return nil, false, err
 			}
-			defer commit.Free()
 			p = append(p, commit)
 		}
 	}
@@ -431,10 +430,18 @@ func (s *state) copyOrSkip(rev *git.Commit, tree *git.Tree, newParents []*git.Oi
 	}
 
 	if nil != identical && copyCommit == false {
+		for _, c := range p {
+			c.Free()
+		}
 		return identical, false, nil
 	}
 
 	commit, err := s.copyCommit(rev, tree, p)
+
+	for _, c := range p {
+		c.Free()
+	}
+
 	if err != nil {
 		return nil, false, err
 	}
