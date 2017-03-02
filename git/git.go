@@ -1,6 +1,8 @@
 package git
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"os"
 	"os/exec"
@@ -15,13 +17,16 @@ type Repo struct {
 }
 
 // CreateRemote registers a remote if it is not already registered
-func (r *Repo) CreateRemote(name, URL string) error {
+func (r *Repo) CreateRemote(URL string) error {
 	cmd := exec.Command("git", "remote")
 	cmd.Dir = r.Path
 	output, err := cmd.Output()
 	if err != nil {
 		return err
 	}
+
+	sum := sha256.Sum256([]byte(URL))
+	name := hex.EncodeToString(sum[:])
 
 	for _, n := range strings.Split(string(output), "\n") {
 		if n == name {
@@ -35,8 +40,9 @@ func (r *Repo) CreateRemote(name, URL string) error {
 }
 
 // RemoteRefs returns the current remotes
-func (r *Repo) RemoteRefs(remote string) []string {
-	if refs, ok := r.remoteRefs[remote]; ok {
+func (r *Repo) RemoteRefs(remote, prefix string) []string {
+	key := remote + ":" + prefix
+	if refs, ok := r.remoteRefs[key]; ok {
 		return refs
 	}
 
@@ -51,37 +57,14 @@ func (r *Repo) RemoteRefs(remote string) []string {
 	if r.remoteRefs == nil {
 		r.remoteRefs = make(map[string][]string)
 	}
-	//	r.remoteRefs[remote] = []string{}
 	for _, line := range strings.Split(string(output), "\n") {
 		parts := strings.Split(line, "\t")
-		if len(parts) > 1 {
-			r.remoteRefs[remote] = append(r.remoteRefs[remote], parts[1])
+		if len(parts) > 1 && !strings.Contains(parts[1], "^{}") && strings.HasPrefix(parts[1], prefix) {
+			r.remoteRefs[key] = append(r.remoteRefs[key], parts[1])
 		}
 	}
 
-	return r.remoteRefs[remote]
-}
-
-// RemoteTags returns tags defined on origin
-func (r *Repo) RemoteTags(remote string) []string {
-	tags := []string{}
-	for _, ref := range r.RemoteRefs(remote) {
-		if !strings.Contains(ref, "^{}") && strings.HasPrefix(ref, "refs/tags/") {
-			tags = append(tags, strings.TrimPrefix(ref, "refs/tags/"))
-		}
-	}
-	return tags
-}
-
-// RemoteHeads returns heads defined on origin
-func (r *Repo) RemoteHeads(remote string) []string {
-	heads := []string{}
-	for _, ref := range r.RemoteRefs(remote) {
-		if strings.HasPrefix(ref, "refs/heads/") {
-			heads = append(heads, strings.TrimPrefix(ref, "refs/heads/"))
-		}
-	}
-	return heads
+	return r.remoteRefs[key]
 }
 
 // CheckRef returns true if the head exists

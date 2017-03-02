@@ -17,7 +17,8 @@ monolithic repository to standalone repositories** in real-time.
 
 **splitsh-lite** is a sub-project that provides a faster implementation of the
 `git subtree split` command, which helps create standalone repositories for one
-or more sub-directories of a main repository.
+or more sub-directories of a main repository. It also provides a `publish`
+command that helps manage those standalone repositories.
 
 If you want to learn more about monorepo vs manyrepos, watch this [4-minute
 lightning talk](http://www.thedotpost.com/2016/05/fabien-potencier-monolithic-repositories-vs-many-repositories)
@@ -53,9 +54,24 @@ cp splitsh-lite "$(git --exec-path)"/git-splitsh
 Usage
 -----
 
-The easiest way to use splitsh is to integrate it with Git:
+git splitsh publish "src/Silex/Api:git@github.com:splitsh/Silex-Api-Test.git" "src/Silex/Provider:git@github.com:splitsh/Silex-Providers-Test.git"
 
-    cp bin/git-splitsh.sh "$(git --exec-path)"/git-splitsh
+git splitsh split --prefix=src/Silex/Api --prefix=src/Silex/Provider:Provider --push=git@github.com:splitsh/Silex-Api-Test.git
+
+--heads : sync all heads
+--tags : sync all tags
+--ref : heads/master (renamed from --origin) -> can we have several --ref? then several target?
+--ref : --ref=HEAD:master --ref=master:foobar --ref=v1.0.0 --ref=v1.0.0:1.0.0
+
+master -> try heads first, then tags?
+
+--commit: depreated use --ref=heads/master@sha1:master
+--target : deprecated use --ref=ORIGIN:TARGET instead
+--scratch : deprecated? Just remove the DB? -> rename to --force (how to apply on one only? -> that's not a poblem use --force with the right ref/tag/..., done)
+
+git splitsh --prefix=src/Silex/Api --heads --push=git@github.com:splitsh/Silex-Api-Test.git
+git splitsh --prefix=src/Silex/Api --ref=heads/HEAD:master --ref=heads/1.0 --push=git@github.com:splitsh/Silex-Api-Test.git
+
 
 Let's say you want to split the `lib/` directory of a repository to its own
 branch; from the "master" Git repository (bare or clone), run:
@@ -117,9 +133,6 @@ Available options:
    reference like `heads/xxx`, `tags/xxx`, `origin/xxx`, or any `refs/xxx`);
 
  * `--progress` displays a progress bar;
-
- * `--quiet` suppresses all output on stderr (useful when run from an automated
-   script);
 
  * `--scratch` flushes the cache (useful when a branch is force pushed or in
    case of a cache corruption).

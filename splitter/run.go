@@ -2,36 +2,65 @@ package splitter
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
-	"strings"
 
 	"github.com/splitsh/lite/git"
 )
 
+// Ref represents a refence to split
+type Ref struct {
+	From   string
+	To     string
+	Commit string
+}
+
+func (r *Ref) String() string {
+	s := r.From
+	if r.Commit != "" {
+		s = fmt.Sprintf("%s@%s", s, r.Commit)
+	}
+	if r.To != "" {
+		s = fmt.Sprintf("%s:%s", s, r.To)
+	}
+	return s
+}
+
 // Run represents a run from the CLI
 type Run struct {
-	Path     string
-	NoUpdate bool
-	NoHeads  bool
-	Heads    string
-	NoTags   bool
-	Tags     string
-	Config   string
-	Debug    bool
-	Progress bool
-	DryRun   bool
+	Path       string
+	NoUpdate   bool
+	Refs       []*Ref
+	Prefixes   []*Prefix
+	Heads      bool
+	Tags       bool
+	Debug      bool
+	Progress   bool
+	DryRun     bool
+	RemoteURL  string
+	GitVersion string
 
 	repo *git.Repo
 }
 
 // Sync synchronizes branches and tags
 func (r *Run) Sync() error {
-	project, err := r.createProject()
-	if err != nil {
-		return err
-	}
 	r.repo = &git.Repo{Path: r.Path}
+
+	if r.Heads {
+		for _, ref := range r.repo.RemoteRefs("origin", "refs/heads/") {
+			r.Refs = append(r.Refs, &Ref{From: ref})
+		}
+	}
+	if r.Tags {
+		for _, ref := range r.repo.RemoteRefs("origin", "refs/tags/") {
+			r.Refs = append(r.Refs, &Ref{From: ref})
+		}
+	}
+
+	for _, ref := range r.Refs {
+		fmt.Println(ref)
+	}
+	os.Exit(0)
 
 	if !r.NoUpdate {
 		fmt.Fprintln(os.Stderr, "Fetching changes from origin")
@@ -40,22 +69,26 @@ func (r *Run) Sync() error {
 		}
 	}
 
-	for name, subtree := range project.Subtrees {
-		if err := r.repo.CreateRemote(name, subtree.Target); err != nil {
+	if r.RemoteURL != "" {
+		if err := r.repo.CreateRemote(r.RemoteURL); err != nil {
 			return fmt.Errorf("Could create remote: %s\n", err)
 		}
-
-		for _, prefix := range subtree.Prefixes {
-			fmt.Fprintf(os.Stderr, "Syncing %s -> %s\n", prefix, subtree.Target)
-		}
-
-		r.syncHeads(project, subtree)
-		r.syncTags(project, subtree)
 	}
+
+	for _, prefix := range r.Prefixes {
+		if r.RemoteURL != "" {
+			fmt.Fprintf(os.Stderr, " %s -> %s\n", prefix, r.RemoteURL)
+		} else {
+			fmt.Fprintf(os.Stderr, " %s\n", prefix)
+		}
+	}
+
+	r.syncHeads()
+	r.syncTags()
 	return nil
 }
 
-func (r *Run) syncHeads(project *Project, subtree *Subtree) {
+func (r *Run) syncHeads() {
 	for _, head := range r.getHeads() {
 		fmt.Fprintf(os.Stderr, "  Head %s", head)
 		if !r.repo.CheckRef("refs/heads/" + head) {
@@ -64,10 +97,10 @@ func (r *Run) syncHeads(project *Project, subtree *Subtree) {
 		}
 
 		fmt.Fprint(os.Stderr, " > ")
-		config := r.createConfig(project, subtree, "refs/heads/"+head)
+		config := r.createConfig("refs/heads/" + head)
 		if sha1 := config.SplitWithFeedback(r.Progress); sha1 != "" {
 			fmt.Fprint(os.Stderr, " > pushing")
-			r.repo.Push(subtree.Target, sha1, "refs/heads/"+head, r.DryRun)
+			r.repo.Push(r.RemoteURL, sha1, "refs/heads/"+head, r.DryRun)
 			fmt.Fprintln(os.Stderr, " > pushed")
 		} else {
 			fmt.Fprintln(os.Stderr, " > empty, not pushed")
@@ -75,8 +108,8 @@ func (r *Run) syncHeads(project *Project, subtree *Subtree) {
 	}
 }
 
-func (r *Run) syncTags(project *Project, subtree *Subtree) {
-	targetTags := r.repo.RemoteTags(subtree.Target)
+func (r *Run) syncTags() {
+	targetTags := r.repo.RemoteRefs(r.RemoteURL, "refs/tags/")
 NextTag:
 	for _, tag := range r.getTags() {
 		fmt.Fprintf(os.Stderr, "  Tag %s", tag)
@@ -93,10 +126,10 @@ NextTag:
 		}
 
 		fmt.Fprint(os.Stderr, " > ")
-		config := r.createConfig(project, subtree, "refs/tags/"+tag)
+		config := r.createConfig("refs/tags/" + tag)
 		if sha1 := config.SplitWithFeedback(r.Progress); sha1 != "" {
 			fmt.Fprint(os.Stderr, " > pushing")
-			r.repo.Push(subtree.Target, sha1, "refs/tags/"+tag, r.DryRun)
+			r.repo.Push(r.RemoteURL, sha1, "refs/tags/"+tag, r.DryRun)
 			fmt.Fprintln(os.Stderr, " > pushed")
 		} else {
 			fmt.Fprintln(os.Stderr, " > empty, not pushed")
@@ -104,65 +137,20 @@ NextTag:
 	}
 }
 
-func (r *Run) createConfig(project *Project, subtree *Subtree, ref string) *Config {
-	prefixes := []*Prefix{}
-	for _, prefix := range subtree.Prefixes {
-		parts := strings.Split(prefix, ":")
-		from := parts[0]
-		to := ""
-		if len(parts) > 1 {
-			to = parts[1]
-		}
-		prefixes = append(prefixes, &Prefix{From: from, To: to})
-	}
-
+func (r *Run) createConfig(ref string) *Config {
 	return &Config{
 		Path:       r.Path,
 		Origin:     ref,
-		Prefixes:   prefixes,
-		GitVersion: project.GitVersion,
+		Prefixes:   r.Prefixes,
+		GitVersion: r.GitVersion,
 		Debug:      r.Debug,
 	}
 }
 
 func (r *Run) getHeads() []string {
-	var heads []string
-
-	if r.NoHeads {
-		return heads
-	}
-
-	if r.Heads != "" {
-		return strings.Split(r.Heads, " ")
-	}
-
-	return r.repo.RemoteHeads("origin")
+	return []string{}
 }
 
 func (r *Run) getTags() []string {
-	var tags []string
-
-	if r.NoTags {
-		return tags
-	}
-
-	if r.Tags != "" {
-		return strings.Split(r.Tags, " ")
-	}
-
-	return r.repo.RemoteTags("origin")
-}
-
-func (r *Run) createProject() (*Project, error) {
-	config, err := ioutil.ReadFile(r.Config)
-	if err != nil {
-		return nil, fmt.Errorf("Could not read config file: %s\n", err)
-	}
-
-	project, err := NewProject(config)
-	if err != nil {
-		return nil, fmt.Errorf("Could read project: %s\n", err)
-	}
-
-	return project, nil
+	return []string{}
 }

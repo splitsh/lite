@@ -17,6 +17,14 @@ type Prefix struct {
 	To   string
 }
 
+func (p *Prefix) String() string {
+	s := p.From
+	if p.To != "" {
+		s = fmt.Sprintf("%s > %s", s, p.To)
+	}
+	return s
+}
+
 // Config represents a split configuration
 type Config struct {
 	Prefixes   []*Prefix
