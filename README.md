@@ -26,6 +26,13 @@ I gave at dotScale
 or watch the longer version from
 [DrupalCon](https://www.youtube.com/watch?v=4w3-f6Xhvu8).
 
+Requirements
+------------
+
+few requirements you should be aware of before installing libgit2
+   - `cmake`
+   - `pkg-config`
+
 Installation
 ------------
 
