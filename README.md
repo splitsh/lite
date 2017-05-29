@@ -139,16 +139,4 @@ go build -o splitsh-lite github.com/splitsh/lite
 If everything goes fine, a `splitsh-lite` binary should be available in the
 current directory.
 
-Full-Version
-------------
-
-The full version of **splitsh** provides more features including a sanity
-checker, GitHub integration for real-time splitting, tag management and
-synchronization, and more. It has been used by the Symfony project for many
-years but the tool is not yet ready for Open-Source. Stay tuned!
-
-If you think that your Open-Source project might benefit from the full version
-of splitsh, send me an email and I will consider splitting your project for
-free on my servers (like I do for Symfony and Laravel).
-
 [1]: https://github.com/splitsh/lite/releases
