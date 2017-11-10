@@ -36,7 +36,7 @@ You can also [install it manually](#manual-installation).
 Usage
 -----
 
-Let say you want to split the `lib/` directory of a repository to its own
+Let's say you want to split the `lib/` directory of a repository to its own
 branch; from the "master" Git repository (bare or clone), run:
 
 ```bash
@@ -59,13 +59,13 @@ via the `--target` option:
 splitsh-lite --prefix=lib/ --target=branch-name
 ```
 
-If new commits are made on the repository, update the split by running the same
+If new commits are made to the repository, update the split by running the same
 command again. Updates are much faster as **splitsh-lite** keeps a cache of
 already split commits. Caching is possible as **splitsh-lite** guarantees that
 two splits of the same code always results in the same history and the same
 `sha1`s for each commit.
 
-By default, **splitsh-lite** splits the current checkout-ed branch but you can
+By default, **splitsh-lite** splits the currently checked out branch but you can
 split a different branch by passing it explicitly via the `--origin` flag
 (mandatory when splitting a bare repository):
 
