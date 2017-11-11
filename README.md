@@ -25,6 +25,8 @@ I gave at dotScale
 (or [read the slides](https://speakerdeck.com/fabpot/a-monorepo-vs-manyrepos))...
 or watch the longer version from
 [DrupalCon](https://www.youtube.com/watch?v=4w3-f6Xhvu8).
+["The Monorepo - Storing your source code has never been so much fun"](The Monorepo - Storing your source code has never been so much fun)
+is also a great resource.
 
 Installation
 ------------
