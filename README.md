@@ -33,6 +33,11 @@ Installation
 
 The fastest way to get started is to download a [binary][1] for your platform.
 
+```bash
+curl -SL https://github.com/splitsh/lite/releases/download/v1.0.1/lite_linux_amd64.tar.gz -o /tmp/lite_linux_amd64.tar.gz \
+  && sudo tar -xzf /tmp/lite_linux_amd64.tar.gz --directory /usr/local/bin/
+```
+
 You can also [install it manually](#manual-installation).
 
 Usage
