@@ -73,7 +73,7 @@ func (r *Result) incTraversed() {
 
 func (r *Result) end(start time.Time) {
 	r.mu.Lock()
-	r.duration = time.Now().Sub(start)
+	r.duration = time.Since(start)
 	r.mu.Unlock()
 }
 

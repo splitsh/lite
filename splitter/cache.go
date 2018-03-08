@@ -86,22 +86,6 @@ func (c *cache) getHead() *git.Oid {
 	return oid
 }
 
-// which is newest or oldest
-func (c *cache) reverse(rev *git.Oid, which string) *git.Oid {
-	var oid *git.Oid
-	c.db.View(func(tx *bolt.Tx) error {
-		result := tx.Bucket(c.key).Get(append(rev[0:20], []byte("/"+which)...))
-		if result == nil && which == "newest" {
-			result = tx.Bucket(c.key).Get(append(rev[0:20], []byte("/oldest")...))
-		}
-		if result != nil {
-			oid = git.NewOidFromBytes(result)
-		}
-		return nil
-	})
-	return oid
-}
-
 func (c *cache) get(rev *git.Oid) *git.Oid {
 	var oid *git.Oid
 	c.db.View(func(tx *bolt.Tx) error {
