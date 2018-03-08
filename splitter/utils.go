@@ -10,7 +10,7 @@ import (
 	"github.com/libgit2/git2go"
 )
 
-var messageNormalizer = regexp.MustCompile("\\s*\\r?\\n")
+var messageNormalizer = regexp.MustCompile(`\s*\r?\n`)
 
 // GitDirectory returns the .git directory for a given directory
 func GitDirectory(path string) string {

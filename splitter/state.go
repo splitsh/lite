@@ -430,7 +430,7 @@ func (s *state) copyOrSkip(rev *git.Commit, tree *git.Tree, newParents []*git.Oi
 		revWalk.Free()
 	}
 
-	if nil != identical && copyCommit == false {
+	if nil != identical && !copyCommit {
 		return identical, false, nil
 	}
 
