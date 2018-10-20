@@ -19,13 +19,9 @@ monolithic repository to standalone repositories** in real-time.
 `git subtree split` command, which helps create standalone repositories for one
 or more sub-directories of a main repository.
 
-If you want to learn more about monorepo vs manyrepos, watch this [4-minute
-lightning talk](http://www.thedotpost.com/2016/05/fabien-potencier-monolithic-repositories-vs-many-repositories)
-I gave at dotScale
-(or [read the slides](https://speakerdeck.com/fabpot/a-monorepo-vs-manyrepos))...
-or watch the longer version from
-[DrupalCon](https://www.youtube.com/watch?v=4w3-f6Xhvu8).
-"[The Monorepo - Storing your source code has never been so much fun](https://www.oreilly.com/library/view/velocity-conference-2017/9781491985335/video316236.html)" is also a great resource.
+If you want to learn more about monorepo vs manyrepos, watch this [4-minute lightning talk](http://www.thedotpost.com/2016/05/fabien-potencier-monolithic-repositories-vs-many-repositories)
+I gave at dotScale (or [read the slides](https://speakerdeck.com/fabpot/a-monorepo-vs-manyrepos))...
+or watch the longer version from [DrupalCon](https://www.youtube.com/watch?v=4w3-f6Xhvu8).
 
 Installation
 ------------
