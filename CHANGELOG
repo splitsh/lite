@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+* 2.0.0 (2017-XX-XX)
+
+ * [BC BREAK] removed the deprecated `--legacy` flag
+ * [BC BREAK] splitting now requires to use the `split` command
+ * [BC BREAK] removed the `--quiet` flag (use `2>/dev/null` instead)
+ * moved information console display to stderr instead of stdout
+ * added the `publish` command
+
 * 1.0.1 (2017-02-24)
 
  * added the `--version` flag
