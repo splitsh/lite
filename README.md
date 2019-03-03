@@ -34,7 +34,12 @@ a monorepo, use the [tomono](https://github.com/unravelin/tomono) tool.
 Installation
 ------------
 
-The fastest way to get started is to download a [binary][1] for your platform.
+The fastest way to get started is to download a [binary][1] for your platform
+and unarchive it with:
+
+```bash
+sudo tar -zxpf lite_linux_amd64.tar.gz --directory /usr/local/bin/
+```
 
 You can also [install it manually](#manual-installation).
 
