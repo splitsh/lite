@@ -52,7 +52,7 @@ func init() {
 	flag.StringVar(&path, "path", ".", "The repository path (optional, current directory by default)")
 	flag.BoolVar(&scratch, "scratch", false, "Flush the cache (optional)")
 	flag.BoolVar(&debug, "debug", false, "Enable the debug mode (optional)")
-	flag.BoolVar(&quiet, "quiet", false, "Suppress the output (optional)")
+	flag.BoolVar(&quiet, "quiet", false, "[DEPRECATED] Suppress the output (optional)")
 	flag.BoolVar(&legacy, "legacy", false, "[DEPRECATED] Enable the legacy mode for projects migrating from an old version of git subtree split (optional)")
 	flag.StringVar(&gitVersion, "git", "latest", "Simulate a given version of Git (optional)")
 	flag.BoolVar(&progress, "progress", false, "Show progress bar (optional, cannot be enabled when debug is enabled)")
@@ -75,6 +75,10 @@ func main() {
 	if legacy {
 		fmt.Fprintln(os.Stderr, `The --legacy option is deprecated (use --git="<1.8.2" instead)`)
 		gitVersion = "<1.8.2"
+	}
+
+	if quiet {
+		fmt.Fprintln(os.Stderr, `The --quiet option is deprecated (append 2>/dev/null to the command instead)`)
 	}
 
 	config := &splitter.Config{

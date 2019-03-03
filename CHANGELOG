@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+* 1.1.0 (2019-XX-XX)
+
+ * deprecated the `--quiet` option (append `2>/dev/null` to the command instead)
+ * moved information console display to stderr instead of stdout
+
 * 1.0.1 (2017-02-24)
 
  * added the `--version` flag
