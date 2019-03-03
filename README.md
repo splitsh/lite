@@ -110,8 +110,7 @@ Available options:
    like `HEAD`, `heads/xxx`, `tags/xxx`, `origin/xxx`, or any `refs/xxx`);
 
  * `--target` creates a reference for the tip of the split (can be any Git
-   reference like `HEAD`, `heads/xxx`, `tags/xxx`, `origin/xxx`, or any
-   `refs/xxx`);
+   reference like `heads/xxx`, `tags/xxx`, `origin/xxx`, or any `refs/xxx`);
 
  * `--progress` displays a progress bar;
 
@@ -119,7 +118,7 @@ Available options:
    script);
 
  * `--scratch` flushes the cache (useful when a branch is force pushed or in
-   case of a cache corruption);
+   case of a cache corruption).
 
 Migrating from `git subtree split`
 ----------------------------------
