@@ -28,6 +28,9 @@ or watch the longer version from
 ["The Monorepo - Storing your source code has never been so much fun"](https://speakerdeck.com/garethr/the-monorepo-storing-your-source-code-has-never-been-so-much-fun)
 is also a great resource.
 
+**Note** If you currently have multiple repositories that you want to merge into
+a monorepo, use the [tomono](https://github.com/unravelin/tomono) tool.
+
 Installation
 ------------
 
