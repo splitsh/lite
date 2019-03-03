@@ -63,17 +63,17 @@ func main() {
 	flag.Parse()
 
 	if v {
-		fmt.Printf("splitsh-lite version %s\n", version)
+		fmt.Fprintf(os.Stderr, "splitsh-lite version %s\n", version)
 		os.Exit(0)
 	}
 
 	if len(prefixes) == 0 {
-		fmt.Println("You must provide the directory to split via the --prefix flag")
+		fmt.Fprintln(os.Stderr, "You must provide the directory to split via the --prefix flag")
 		os.Exit(1)
 	}
 
 	if legacy {
-		fmt.Fprintf(os.Stderr, `The --legacy option is deprecated (use --git="<1.8.2" instead)`)
+		fmt.Fprintln(os.Stderr, `The --legacy option is deprecated (use --git="<1.8.2" instead)`)
 		gitVersion = "<1.8.2"
 	}
 
@@ -100,9 +100,8 @@ func main() {
 		}()
 	}
 
-	err := splitter.Split(config, result)
-	if err != nil {
-		fmt.Println(err)
+	if err := splitter.Split(config, result); err != nil {
+		fmt.Fprintln(os.Stderr, err.Error())
 		os.Exit(1)
 	}
 
