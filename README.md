@@ -38,6 +38,13 @@ The fastest way to get started is to download a [binary][1] for your platform.
 
 You can also [install it manually](#manual-installation).
 
+If you want to integrate splitsh with Git, install it like this (and use it via
+`git splitsh`):
+
+```bash
+cp splitsh-lite "$(git --exec-path)"/git-splitsh
+```
+
 Usage
 -----
 
