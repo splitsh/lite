@@ -73,7 +73,7 @@ Automatically create a branch for the split by passing a branch name
 via the `--target` option:
 
 ```bash
-splitsh-lite --prefix=lib/ --target=branch-name
+splitsh-lite --prefix=lib/ --target=heads/branch-name
 ```
 
 If new commits are made to the repository, update the split by running the same
