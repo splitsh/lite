@@ -106,6 +106,8 @@ Available options:
 
  * `--path` is the path of the repository to split (current directory by default);
 
+ * `--cachePath` cache path (optional, inherits --path value by default);
+
  * `--origin` is the Git reference for the origin (can be any Git reference
    like `HEAD`, `heads/xxx`, `tags/xxx`, `origin/xxx`, or any `refs/xxx`);
 

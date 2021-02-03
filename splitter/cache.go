@@ -22,7 +22,7 @@ func newCache(branch string, config *Config) (*cache, error) {
 	var err error
 	db := config.DB
 	if db == nil {
-		db, err = bolt.Open(filepath.Join(GitDirectory(config.Path), "splitsh.db"), 0644, &bolt.Options{Timeout: 5 * time.Second})
+		db, err = bolt.Open(filepath.Join(GitDirectory(config.CachePath), "splitsh.db"), 0644, &bolt.Options{Timeout: 5 * time.Second})
 		if err != nil {
 			return nil, err
 		}

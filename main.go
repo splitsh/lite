@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/splitsh/lite/splitter"
+	"./splitter"
 )
 
 var (
@@ -41,7 +41,7 @@ func (p *prefixesFlag) Set(value string) error {
 }
 
 var prefixes prefixesFlag
-var origin, target, commit, path, gitVersion string
+var origin, target, commit, path, cachePath, gitVersion string
 var scratch, debug, quiet, legacy, progress, v bool
 
 func init() {
@@ -50,6 +50,7 @@ func init() {
 	flag.StringVar(&target, "target", "", "The branch to create when split is finished (optional)")
 	flag.StringVar(&commit, "commit", "", "The commit at which to start the split (optional)")
 	flag.StringVar(&path, "path", ".", "The repository path (optional, current directory by default)")
+	flag.StringVar(&cachePath, "cachePath", "", "The cache path (optional, inherits --path value by default)")
 	flag.BoolVar(&scratch, "scratch", false, "Flush the cache (optional)")
 	flag.BoolVar(&debug, "debug", false, "Enable the debug mode (optional)")
 	flag.BoolVar(&quiet, "quiet", false, "[DEPRECATED] Suppress the output (optional)")
@@ -81,8 +82,13 @@ func main() {
 		fmt.Fprintln(os.Stderr, `The --quiet option is deprecated (append 2>/dev/null to the command instead)`)
 	}
 
+	if cachePath == "" {
+		cachePath = path
+	}
+
 	config := &splitter.Config{
 		Path:       path,
+		CachePath:  cachePath,
 		Origin:     origin,
 		Prefixes:   []*splitter.Prefix(prefixes),
 		Target:     target,

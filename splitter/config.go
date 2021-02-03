@@ -19,6 +19,7 @@ type Prefix struct {
 type Config struct {
 	Prefixes   []*Prefix
 	Path       string
+	CachePath  string
 	Origin     string
 	Commit     string
 	Target     string
