@@ -48,6 +48,14 @@ func Split(config *Config, result *Result) error {
 		return err
 	}
 	defer state.close()
+	var oldMergedSplit *git.Oid
+	oldMergedSplit, err = state.findExistingSplits()
+	if err != nil {
+		return err
+	}
+	if oldMergedSplit != nil {
+		state.recoverHistory(oldMergedSplit)
+	}
 	return state.split()
 }
 
