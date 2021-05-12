@@ -477,7 +477,12 @@ func (s *state) copyCommit(rev *git.Commit, tree *git.Tree, parents []*git.Commi
 		author.Email = "nobody@example.com"
 	}
 
-	oid, err := s.repo.CreateCommit("", author, rev.Committer(), message, tree, parents...)
+	committer := rev.Committer()
+	if committer.Email == "" {
+		committer.Email = "nobody@example.com"
+	}
+
+	oid, err := s.repo.CreateCommit("", author, committer, message, tree, parents...)
 	if err != nil {
 		return nil, err
 	}
