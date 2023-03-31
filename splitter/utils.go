@@ -7,7 +7,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/libgit2/git2go"
+	git "github.com/libgit2/git2go/v34"
 )
 
 var messageNormalizer = regexp.MustCompile(`\s*\r?\n`)
