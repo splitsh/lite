@@ -34,14 +34,37 @@ a monorepo, use the [tomono](https://github.com/unravelin/tomono) tool.
 Installation
 ------------
 
-The fastest way to get started is to download a [binary][1] for your platform
-and unarchive it with:
+Manual Installation
+-------------------
+
+First, you need to install `libgit2`, preferably using your package manager of
+choice.
+
+If you get version `1.5`, jump to the compilation step below. If not, you first
+need to change the version used in the code. Using the table on the
+[libgit2](https://github.com/libgit2/git2go#which-go-version-to-use)
+repository, figure out which version you need. Then, replace the `v34` in the
+`go.mod` file and in all files under the `splitter/` directory. Run `go mod tidy`.
+
+Then, compile `splitsh-lite`:
 
 ```bash
-sudo tar -zxpf lite_linux_amd64.tar.gz --directory /usr/local/bin/
+go build -o splitsh-lite github.com/splitsh/lite
 ```
 
-You can also [install it manually](#manual-installation).
+If everything goes fine, a `splitsh-lite` binary should be available in the
+current directory.
+
+If you get errors about an incompatible `libgit2` library, try exporting the
+needed flags, e.g.
+
+```bash
+export LDFLAGS="-L/opt/homebrew/opt/libgit2@1.5/lib"
+export CPPFLAGS="-I/opt/homebrew/opt/libgit2@1.5/include"
+export PKG_CONFIG_PATH="/opt/homebrew/opt/libgit2@1.5/lib/pkgconfig"
+```
+
+before running `go build`.
 
 If you want to integrate splitsh with Git, install it like this (and use it via
 `git splitsh`):
@@ -130,32 +153,3 @@ However, note that older versions of `git subtree split` used broken
 algorithms, and so generated different `sha1`s than the latest version. You can
 simulate those version via the `--git` flag. Use `<1.8.2` or `<2.8.0` depending
 on which version of `git subtree split` you want to simulate.
-
-Manual Installation
--------------------
-
-If you want to contribute to `splitsh-lite` or use it as a library, you first
-need to install `libgit2` in version `1.5`, preferably using your package
-manager of choice.
-
-Then, compile `splitsh-lite`:
-
-```bash
-go build -o splitsh-lite github.com/splitsh/lite
-```
-
-If everything goes fine, a `splitsh-lite` binary should be available in the
-current directory.
-
-If you get errors about an incompatible `libgit2` library, try exporting the
-needed flags, e.g.
-
-```bash
-export LDFLAGS="-L/opt/homebrew/opt/libgit2@1.5/lib"
-export CPPFLAGS="-I/opt/homebrew/opt/libgit2@1.5/include"
-export PKG_CONFIG_PATH="/opt/homebrew/opt/libgit2@1.5/lib/pkgconfig"
-```
-
-before running `go build`.
-
-[1]: https://github.com/splitsh/lite/releases
