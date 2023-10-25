@@ -135,24 +135,26 @@ Manual Installation
 -------------------
 
 If you want to contribute to `splitsh-lite` or use it as a library, you first
-need to install `libgit2`:
-
-```bash
-go get -d github.com/libgit2/git2go
-cd $GOPATH/src/github.com/libgit2/git2go
-git checkout next
-git submodule update --init
-make install
-```
+need to install `libgit2` in version `1.5`, preferably using your package manager of choice.
 
 Then, compile `splitsh-lite`:
 
 ```bash
-go get github.com/splitsh/lite
+go get
 go build -o splitsh-lite github.com/splitsh/lite
 ```
 
 If everything goes fine, a `splitsh-lite` binary should be available in the
 current directory.
+
+If you get errors about an incompatible `libgit2` library, try exporting the needed flags, e.g.
+
+```bash
+export LDFLAGS="-L/opt/homebrew/opt/libgit2@1.5/lib"
+export CPPFLAGS="-I/opt/homebrew/opt/libgit2@1.5/include"
+export PKG_CONFIG_PATH="/opt/homebrew/opt/libgit2@1.5/lib/pkgconfig"
+```
+
+before running `go build`.
 
 [1]: https://github.com/splitsh/lite/releases

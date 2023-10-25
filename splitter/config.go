@@ -6,7 +6,7 @@ import (
 	"sync"
 
 	"github.com/boltdb/bolt"
-	"github.com/libgit2/git2go"
+	git "github.com/libgit2/git2go/v34"
 )
 
 // Prefix represents which paths to split
