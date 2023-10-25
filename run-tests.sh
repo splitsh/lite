@@ -1,7 +1,6 @@
 #!/bin/bash
 
-set -e
-set -f
+set -euo pipefail
 
 switchAsSammy()
 {
@@ -58,7 +57,7 @@ simpleTest() {
     git commit -m"updated b" > /dev/null
 
     GIT_SUBTREE_SPLIT_SHA1=`git subtree split --prefix=b/ -q`
-    GIT_SPLITSH_SHA1=`$GOPATH/src/github.com/splitsh/lite/lite --prefix=b/ 2>/dev/null`
+    GIT_SPLITSH_SHA1=`$LITE_PATH --prefix=b/ 2>/dev/null`
 
     if [ "$GIT_SUBTREE_SPLIT_SHA1" == "$GIT_SPLITSH_SHA1" ]; then
         echo "Test #1 - OK ($GIT_SUBTREE_SPLIT_SHA1 == $GIT_SPLITSH_SHA1)"
@@ -68,7 +67,7 @@ simpleTest() {
     fi
 
     GIT_SUBTREE_SPLIT_SHA1=`git subtree split --prefix=b/ -q d11e3f8e54fddd5bec458ac23837679a67a1508a`
-    GIT_SPLITSH_SHA1=`$GOPATH/src/github.com/splitsh/lite/lite --prefix=b/ --commit=d11e3f8e54fddd5bec458ac23837679a67a1508a 2>/dev/null`
+    GIT_SPLITSH_SHA1=`$LITE_PATH --prefix=b/ --commit=d11e3f8e54fddd5bec458ac23837679a67a1508a 2>/dev/null`
 
     if [ "$GIT_SUBTREE_SPLIT_SHA1" == "$GIT_SPLITSH_SHA1" ]; then
         echo "Test #2 - OK ($GIT_SUBTREE_SPLIT_SHA1 == $GIT_SPLITSH_SHA1)"
@@ -118,8 +117,8 @@ mergeTest() {
 
     GIT_SUBTREE_SPLIT_SHA1_2="a2c4245703f8dac149ab666242a12e1d4b2510d9"
     GIT_SUBTREE_SPLIT_SHA1_3="ba0dab2c4e99d68d11088f2c556af92851e93b14"
-    GIT_SPLITSH_SHA1_2=`$GOPATH/src/github.com/splitsh/lite/lite --git="<2.8.0" --prefix=src/ 2>/dev/null`
-    GIT_SPLITSH_SHA1_3=`$GOPATH/src/github.com/splitsh/lite/lite --prefix=src/ 2>/dev/null`
+    GIT_SPLITSH_SHA1_2=`$LITE_PATH --git="<2.8.0" --prefix=src/ 2>/dev/null`
+    GIT_SPLITSH_SHA1_3=`$LITE_PATH --prefix=src/ 2>/dev/null`
 
     if [ "$GIT_SUBTREE_SPLIT_SHA1_2" == "$GIT_SPLITSH_SHA1_2" ]; then
         echo "Test #3 - OK ($GIT_SUBTREE_SPLIT_SHA1_2 == $GIT_SPLITSH_SHA1_2)"
@@ -144,7 +143,7 @@ twigSplitTest() {
         git clone https://github.com/twigphp/Twig > /dev/null
     fi
     GIT_SUBTREE_SPLIT_SHA1="ea449b0f2acba7d489a91f88154687250d2bdf42"
-    GIT_SPLITSH_SHA1=`$GOPATH/src/github.com/splitsh/lite/lite --prefix=lib/ --origin=refs/tags/v1.24.1 --path=Twig --scratch 2>/dev/null`
+    GIT_SPLITSH_SHA1=`$LITE_PATH --prefix=lib/ --origin=refs/tags/v1.24.1 --path=Twig --scratch 2>/dev/null`
 
     if [ "$GIT_SUBTREE_SPLIT_SHA1" == "$GIT_SPLITSH_SHA1" ]; then
         echo "Test #5 - OK ($GIT_SUBTREE_SPLIT_SHA1 == $GIT_SPLITSH_SHA1)"
@@ -155,6 +154,12 @@ twigSplitTest() {
 
     cd ../
 }
+
+LITE_PATH=`pwd`/splitsh-lite
+if [ ! -e $LITE_PATH ]; then
+    echo "You first need to compile the splitsh-lite binary"
+    exit 1
+fi
 
 if [ ! -d splitter-lite-tests ]; then
     mkdir splitter-lite-tests
