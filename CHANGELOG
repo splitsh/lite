@@ -1,14 +1,15 @@
 CHANGELOG
 =========
 
-* 1.1.0 (2019-XX-XX)
+* 2.0.0 (2023-XX-XX)
 
- * deprecated the `--quiet` option (append `2>/dev/null` to the command instead)
- * moved information console display to stderr instead of stdout
+ * move to go.mod
+ * deprecate the `--quiet` option (append `2>/dev/null` to the command instead)
+ * move information console display to stderr instead of stdout
 
 * 1.0.1 (2017-02-24)
 
- * added the `--version` flag
+ * add the `--version` flag
 
 * 1.0.0 (2017-01-02)
 
