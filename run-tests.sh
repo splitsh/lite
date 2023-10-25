@@ -66,8 +66,8 @@ simpleTest() {
         exit 1
     fi
 
-    GIT_SUBTREE_SPLIT_SHA1=`git subtree split --prefix=b/ -q d11e3f8e54fddd5bec458ac23837679a67a1508a`
-    GIT_SPLITSH_SHA1=`$LITE_PATH --prefix=b/ --commit=d11e3f8e54fddd5bec458ac23837679a67a1508a 2>/dev/null`
+    GIT_SUBTREE_SPLIT_SHA1=`git subtree split --prefix=b/ -q 71777969e7c0ddd02e0c060c5c892c083971b953`
+    GIT_SPLITSH_SHA1=`$LITE_PATH --prefix=b/ --commit=71777969e7c0ddd02e0c060c5c892c083971b953 2>/dev/null`
 
     if [ "$GIT_SUBTREE_SPLIT_SHA1" == "$GIT_SPLITSH_SHA1" ]; then
         echo "Test #2 - OK ($GIT_SUBTREE_SPLIT_SHA1 == $GIT_SPLITSH_SHA1)"
@@ -100,7 +100,7 @@ mergeTest() {
     echo -e "a\n\nb\nchange 2\nc\nchange 3\n" > src/foo
     git commit -a -m"change 3" > /dev/null
 
-    git checkout master 2> /dev/null
+    git checkout main 2> /dev/null
     switchAsSammy "Sat, 24 Nov 1973 19:02:02 +0200" "Sat, 24 Nov 1973 19:02:02 +0200"
     echo -e "a\nchange 1\nb\n\nc\n\n" > src/foo
     git commit -a -m"change 1" > /dev/null
@@ -110,7 +110,7 @@ mergeTest() {
     echo -e "a\n\nb\nchange 2\nc\n\n" > src/foo
     git commit -a -m"change 2" > /dev/null
 
-    git checkout master 2> /dev/null
+    git checkout main 2> /dev/null
     git checkout -b branch3 2> /dev/null
     git merge branch1 --no-edit > /dev/null
     git merge branch2 --no-edit -s ours > /dev/null
@@ -166,6 +166,6 @@ if [ ! -d splitter-lite-tests ]; then
 fi
 cd splitter-lite-tests
 
-simpleTest # Test #1 DOES work, Test #2 DO NOT work
-mergeTest # Test #3 DO NOT work, Test #4 DO NOT work
-twigSplitTest # Test #5 DOES work
+simpleTest
+mergeTest
+twigSplitTest
