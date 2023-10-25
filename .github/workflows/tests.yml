@@ -1,0 +1,38 @@
+name: tests
+
+on:
+    pull_request:
+    push:
+
+jobs:
+    update:
+        name: Run tests
+        runs-on: ubuntu-latest
+        steps:
+            -
+                name: Install libgit2-dev
+                run: sudo apt-get install -y libgit2-dev
+            -
+                name: Checkout
+                uses: actions/checkout@v3
+            -
+                name: Set up Go
+                uses: actions/setup-go@v3
+                with:
+                    go-version: '^1.21.1'
+            -   uses: actions/cache@v3
+                with:
+                    path: |
+                        ~/.cache/go-build
+                        ~/go/pkg/mod
+                    key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+                    restore-keys: |
+                        ${{ runner.os }}-go-
+            -
+                name: Set the right libgit2 version
+                run: |
+                    sed -i -e 's/v34/v31/g' go.mod splitter/*.go
+                    go mod tidy
+            -
+                name: Test
+                run: go test -v ./...
