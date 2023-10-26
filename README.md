@@ -43,8 +43,12 @@ choice.
 If you get version `1.5`, jump to the compilation step below. If not, you first
 need to change the version used in the code. Using the table on the
 [libgit2](https://github.com/libgit2/git2go#which-go-version-to-use)
-repository, figure out which version you need. Then, replace the `v34` in the
-`go.mod` file and in all files under the `splitter/` directory. Run `go mod tidy`.
+repository, figure out which version you need. Lets say you need version `v31`:
+
+```bash
+sed -i -e 's/v34/v31/g' go.mod splitter/*.go
+go mod tidy
+```
 
 Then, compile `splitsh-lite`:
 
@@ -136,9 +140,6 @@ Available options:
    reference like `heads/xxx`, `tags/xxx`, `origin/xxx`, or any `refs/xxx`);
 
  * `--progress` displays a progress bar;
-
- * `--quiet` suppresses all output on stderr (useful when run from an automated
-   script);
 
  * `--scratch` flushes the cache (useful when a branch is force pushed or in
    case of a cache corruption).
