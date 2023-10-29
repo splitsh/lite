@@ -40,10 +40,12 @@ Manual Installation
 First, you need to install `libgit2`, preferably using your package manager of
 choice.
 
-If you get version `1.5`, jump to the compilation step below. If not, you first
-need to change the version used in the code. Using the table on the
-[libgit2](https://github.com/libgit2/git2go#which-go-version-to-use)
-repository, figure out which version you need. Lets say you need version `v31`:
+If you get `libgit2` version `1.5`, you're all set and jump to the compilation
+step below. If not, you first need to change the `git2go` version used in the
+code. Using the table on the
+[libgit2](https://github.com/libgit2/git2go#which-go-version-to-use) repository,
+figure out which version of the `git2go` you need based on the `liggit2` library
+you installed. Let's say you need version `v31`:
 
 ```bash
 sed -i -e 's/v34/v31/g' go.mod splitter/*.go
