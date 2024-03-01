@@ -5,8 +5,8 @@ import (
 	"log"
 	"sync"
 
-	"github.com/boltdb/bolt"
 	git "github.com/libgit2/git2go/v34"
+	bolt "go.etcd.io/bbolt"
 )
 
 // Prefix represents which paths to split

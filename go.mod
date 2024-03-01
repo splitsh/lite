@@ -3,8 +3,8 @@ module github.com/splitsh/lite
 go 1.21
 
 require (
-	github.com/boltdb/bolt v1.3.1
 	github.com/libgit2/git2go/v34 v34.0.0
+	go.etcd.io/bbolt v1.3.9
 )
 
 require (
