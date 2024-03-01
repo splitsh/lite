@@ -1,12 +1,11 @@
 CHANGELOG
 =========
 
-* 2.0.0 (2023-XX-XX)
+* 2.0.0 (2023-10-25)
 
  * move to go.mod
  * remove the `--quiet` option (append `2>/dev/null` to the command instead)
  * remove the `--legacy` option (same as `--git '<1.8.2'`)
-
  * move information console display to stderr instead of stdout
 
 * 1.0.1 (2017-02-24)
