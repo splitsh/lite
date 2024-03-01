@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/boltdb/bolt"
 	git "github.com/libgit2/git2go/v34"
+	bolt "go.etcd.io/bbolt"
 )
 
 type cache struct {
