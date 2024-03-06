@@ -16,6 +16,7 @@ type cache struct {
 	key    []byte
 	branch string
 	db     *bolt.DB
+	data   map[string][]byte
 }
 
 func newCache(branch string, config *Config) (*cache, error) {
@@ -32,6 +33,7 @@ func newCache(branch string, config *Config) (*cache, error) {
 		db:     db,
 		branch: branch,
 		key:    key(config),
+		data:   make(map[string][]byte),
 	}
 
 	err = db.Update(func(tx *bolt.Tx) error {
@@ -46,6 +48,18 @@ func newCache(branch string, config *Config) (*cache, error) {
 }
 
 func (c *cache) close() error {
+	err := c.db.Update(func(tx *bolt.Tx) error {
+		for k, v := range c.data {
+			if err := tx.Bucket(c.key).Put([]byte(k), v); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
 	return c.db.Close()
 }
 
@@ -68,17 +82,20 @@ func key(config *Config) []byte {
 	return h.Sum(nil)
 }
 
-func (c *cache) setHead(head *git.Oid) error {
-	return c.db.Update(func(tx *bolt.Tx) error {
-		return tx.Bucket(c.key).Put([]byte("head/"+c.branch), head[0:20])
-	})
+func (c *cache) setHead(head *git.Oid) {
+	c.data["head/"+c.branch] = head[0:20]
 }
 
 func (c *cache) getHead() *git.Oid {
+	if head, ok := c.data["head"+c.branch]; ok {
+		return git.NewOidFromBytes(head)
+	}
+
 	var oid *git.Oid
 	c.db.View(func(tx *bolt.Tx) error {
 		result := tx.Bucket(c.key).Get([]byte("head/" + c.branch))
 		if result != nil {
+			c.data["head/"+c.branch] = result
 			oid = git.NewOidFromBytes(result)
 		}
 		return nil
@@ -87,10 +104,15 @@ func (c *cache) getHead() *git.Oid {
 }
 
 func (c *cache) get(rev *git.Oid) *git.Oid {
+	if v, ok := c.data[string(rev[0:20])]; ok {
+		return git.NewOidFromBytes(v)
+	}
+
 	var oid *git.Oid
 	c.db.View(func(tx *bolt.Tx) error {
 		result := tx.Bucket(c.key).Get(rev[0:20])
 		if result != nil {
+			c.data[string(rev[0:20])] = result
 			oid = git.NewOidFromBytes(result)
 		}
 		return nil
@@ -98,38 +120,32 @@ func (c *cache) get(rev *git.Oid) *git.Oid {
 	return oid
 }
 
-func (c *cache) set(rev, newrev *git.Oid, created bool) error {
-	return c.db.Update(func(tx *bolt.Tx) error {
-		err := tx.Bucket(c.key).Put(rev[0:20], newrev[0:20])
-		if err != nil {
-			return err
-		}
-
-		postfix := "/newest"
-		if created {
-			postfix = "/oldest"
-		}
-
-		key := append(newrev[0:20], []byte(postfix)...)
-		return tx.Bucket(c.key).Put(key, rev[0:20])
-	})
+func (c *cache) set(rev, newrev *git.Oid, created bool) {
+	c.data[string(rev[0:20])] = newrev[0:20]
+	postfix := "/newest"
+	if created {
+		postfix = "/oldest"
+	}
+	c.data[string(append(newrev[0:20], []byte(postfix)...))] = rev[0:20]
 }
 
 func (c *cache) gets(commits []*git.Oid) []*git.Oid {
 	var oids []*git.Oid
-
 	c.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket(c.key)
 		for _, commit := range commits {
-			result := b.Get(commit[0:20])
+			result := c.data[string(commit[0:20])]
 			if result != nil {
 				oids = append(oids, git.NewOidFromBytes(result))
+			} else {
+				result := b.Get(commit[0:20])
+				if result != nil {
+					oids = append(oids, git.NewOidFromBytes(result))
+				}
 			}
 		}
-
 		return nil
 	})
-
 	return oids
 }
 
