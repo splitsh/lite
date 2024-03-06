@@ -239,9 +239,7 @@ func (s *state) splitRev(rev *git.Commit) (*git.Oid, error) {
 		s.result.incCreated()
 	}
 
-	if err := s.cache.set(rev.Id(), newrev, created); err != nil {
-		return nil, err
-	}
+	s.cache.set(rev.Id(), newrev, created)
 
 	return newrev, nil
 }
