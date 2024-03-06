@@ -257,7 +257,7 @@ func (s *state) subtreeForCommit(commit *git.Commit) (*git.Tree, error) {
 		return s.treeByPath(tree, s.simplePrefix)
 	}
 
-	return s.treeByPaths(tree, s.config.Prefixes)
+	return s.treeByPaths(tree)
 }
 
 func (s *state) treeByPath(tree *git.Tree, prefix string) (*git.Tree, error) {
@@ -274,7 +274,7 @@ func (s *state) treeByPath(tree *git.Tree, prefix string) (*git.Tree, error) {
 	return s.repo.LookupTree(treeEntry.Id)
 }
 
-func (s *state) treeByPaths(tree *git.Tree, prefixes []*Prefix) (*git.Tree, error) {
+func (s *state) treeByPaths(tree *git.Tree) (*git.Tree, error) {
 	var currentTree, prefixedTree, mergedTree *git.Tree
 	for _, prefix := range s.config.Prefixes {
 		// splitting
