@@ -14,13 +14,13 @@ jobs:
                 run: sudo apt-get install -y pkg-config cmake
             -
                 name: Checkout
-                uses: actions/checkout@v3
+                uses: actions/checkout@v4
             -
                 name: Set up Go
-                uses: actions/setup-go@v3
+                uses: actions/setup-go@v5
                 with:
                     go-version: '^1.22.0'
-            -   uses: actions/cache@v3
+            -   uses: actions/cache@v4
                 with:
                     path: |
                         ~/.cache/go-build
@@ -41,4 +41,5 @@ jobs:
                     export PKG_CONFIG_PATH=/home/runner/work/lite/lite/vendor/github.com/libgit2/git2go/v34/static-build/build
                     go test -v ./...
                     go build -o splitsh-lite main.go
+                    git config --global init.defaultBranch main
                     ./run-tests.sh
