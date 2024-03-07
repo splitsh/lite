@@ -53,17 +53,25 @@ func Split(config *Config, result *Result) error {
 
 // Validate validates the configuration
 func (config *Config) Validate() error {
-	if !git.ReferenceIsValidName(config.Origin) {
-		return fmt.Errorf("The origin is not a valid Git reference")
+	ok, err := git.ReferenceNameIsValid(config.Origin)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return fmt.Errorf("the origin is not a valid Git reference")
 	}
 
-	if config.Target != "" && !git.ReferenceIsValidName(config.Target) {
-		return fmt.Errorf("The target is not a valid Git reference")
+	ok, err = git.ReferenceNameIsValid(config.Target)
+	if err != nil {
+		return err
+	}
+	if config.Target != "" && !ok {
+		return fmt.Errorf("the target is not a valid Git reference")
 	}
 
 	git, ok := supportedGitVersions[config.GitVersion]
 	if !ok {
-		return fmt.Errorf(`The git version can only be one of "<1.8.2", "<2.8.0", or "latest"`)
+		return fmt.Errorf(`the git version can only be one of "<1.8.2", "<2.8.0", or "latest"`)
 	}
 	config.Git = git
 

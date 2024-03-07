@@ -63,7 +63,7 @@ func normalizeOriginBranch(repo *git.Repository, origin string) (string, error) 
 
 	obj, ref, err := repo.RevparseExt(origin)
 	if err != nil {
-		return "", fmt.Errorf("Bad revision for origin: %s", err)
+		return "", fmt.Errorf("bad revision for origin: %s", err)
 	}
 	if obj != nil {
 		obj.Free()

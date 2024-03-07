@@ -84,12 +84,12 @@ func roundDuration(d, r time.Duration) time.Duration {
 	}
 	neg := d < 0
 	if neg {
-		d = -d
+		d -= d
 	}
 	if m := d % r; m+m < r {
-		d = d - m
+		d -= m
 	} else {
-		d = d + r - m
+		d += r - m
 	}
 	if neg {
 		return -d

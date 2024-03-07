@@ -41,7 +41,7 @@ func newCache(branch string, config *Config) (*cache, error) {
 		return err1
 	})
 	if err != nil {
-		return nil, fmt.Errorf("Impossible to create bucket: %s", err)
+		return nil, fmt.Errorf("impossible to create bucket: %s", err)
 	}
 
 	return c, nil
