@@ -50,6 +50,7 @@ simpleTest() {
     switchAsFred "Sat, 24 Nov 1973 22:01:02 +0200" "Sat, 24 Nov 1973 22:11:22 +0200"
     git rm a > /dev/null
     git commit -m"updated a" > /dev/null
+    SHA=`git rev-parse HEAD`
 
     switchAsFred "Sat, 24 Nov 1973 23:01:02 +0200" "Sat, 24 Nov 1973 23:11:22 +0200"
     echo "bb" > b/b
@@ -66,8 +67,8 @@ simpleTest() {
         exit 1
     fi
 
-    GIT_SUBTREE_SPLIT_SHA1=`git subtree split --prefix=b/ -q 71777969e7c0ddd02e0c060c5c892c083971b953`
-    GIT_SPLITSH_SHA1=`$LITE_PATH --prefix=b/ --commit=71777969e7c0ddd02e0c060c5c892c083971b953 2>/dev/null`
+    GIT_SUBTREE_SPLIT_SHA1=`git subtree split --prefix=b/ -q $SHA`
+    GIT_SPLITSH_SHA1=`$LITE_PATH --prefix=b/ --commit=$SHA 2>/dev/null`
 
     if [ "$GIT_SUBTREE_SPLIT_SHA1" == "$GIT_SPLITSH_SHA1" ]; then
         echo "Test #2 - OK ($GIT_SUBTREE_SPLIT_SHA1 == $GIT_SPLITSH_SHA1)"
