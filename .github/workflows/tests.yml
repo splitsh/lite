@@ -40,3 +40,5 @@ jobs:
                 run: |
                     export PKG_CONFIG_PATH=/home/runner/work/lite/lite/vendor/github.com/libgit2/git2go/v34/static-build/build
                     go test -v ./...
+                    go build -o splitsh-lite main.go
+                    ./run-tests.sh
