@@ -120,13 +120,8 @@ func (c *cache) get(rev *git.Oid) *git.Oid {
 	return oid
 }
 
-func (c *cache) set(rev, newrev *git.Oid, created bool) {
+func (c *cache) set(rev, newrev *git.Oid) {
 	c.data[string(rev[0:20])] = newrev[0:20]
-	postfix := "/newest"
-	if created {
-		postfix = "/oldest"
-	}
-	c.data[string(append(newrev[0:20], []byte(postfix)...))] = rev[0:20]
 }
 
 func (c *cache) gets(commits []*git.Oid) []*git.Oid {
