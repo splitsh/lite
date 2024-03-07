@@ -10,8 +10,8 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             -
-                name: Install libgit2-dev
-                run: sudo apt-get install -y libgit2-dev
+                name: Install deps
+                run: sudo apt-get install -y pkg-config cmake
             -
                 name: Checkout
                 uses: actions/checkout@v3
@@ -29,10 +29,14 @@ jobs:
                     restore-keys: |
                         ${{ runner.os }}-go-
             -
-                name: Set the right libgit2 version
+                name: Building
                 run: |
-                    sed -i -e 's/v34/v31/g' go.mod splitter/*.go
-                    go mod tidy
+                    go mod vendor
+                    rm -rf vendor/github.com/libgit2/git2go
+                    git clone https://github.com/libgit2/git2go vendor/github.com/libgit2/git2go/v34
+                    cd vendor/github.com/libgit2/git2go/v34 && git checkout v34.0.0 && git submodule update --init && make install-static
             -
                 name: Test
-                run: go test -v ./...
+                run: |
+                    export PKG_CONFIG_PATH=/home/runner/work/lite/lite/vendor/github.com/libgit2/git2go/v34/static-build/build
+                    go test -v ./...

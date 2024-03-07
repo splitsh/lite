@@ -32,7 +32,7 @@ func (p *prefixesFlag) Set(value string) error {
 	for _, prefix := range []*splitter.Prefix(*p) {
 		// FIXME: to should be normalized (xxx vs xxx/ for instance)
 		if prefix.To == to {
-			return fmt.Errorf("Cannot have two prefix splits under the same directory: %s -> %s vs %s -> %s", prefix.From, prefix.To, from, to)
+			return fmt.Errorf("cannot have two prefix splits under the same directory: %s -> %s vs %s -> %s", prefix.From, prefix.To, from, to)
 		}
 	}
 
