@@ -61,13 +61,17 @@ func newState(config *Config, result *Result) (*state, error) {
 	}
 
 	if config.Debug {
-		state.logger.Printf("Splitting %s\n", state.originBranch)
+		state.logger.Printf("Splitting %s", state.originBranch)
 		for _, v := range config.Prefixes {
 			to := v.To
 			if to == "" {
 				to = "ROOT"
 			}
-			state.logger.Printf("  From \"%s\" to \"%s\"\n", v.From, to)
+			state.logger.Printf(`  From "%s" to "%s"`, v.From, to)
+			if (len(v.Excludes)) == 0 {
+			} else {
+				state.logger.Printf(`  Excluding "%s"`, strings.Join(v.Excludes, `", "`))
+			}
 		}
 	}
 
@@ -79,7 +83,7 @@ func newState(config *Config, result *Result) (*state, error) {
 
 	// simplePrefix contains the prefix when there is only one
 	// with an empty value (target)
-	if len(config.Prefixes) == 1 && config.Prefixes[0].To == "" {
+	if len(config.Prefixes) == 1 && config.Prefixes[0].To == "" && len(config.Prefixes[0].Excludes) == 0 {
 		state.simplePrefix = config.Prefixes[0].From
 	}
 
@@ -284,6 +288,14 @@ func (s *state) treeByPaths(tree *git.Tree) (*git.Tree, error) {
 			continue
 		}
 
+		if len(prefix.Excludes) > 0 {
+			prunedTree, err := s.pruneTree(splitTree, prefix.Excludes)
+			if err != nil {
+				return nil, err
+			}
+			splitTree = prunedTree
+		}
+
 		// adding the prefix
 		if prefix.To != "" {
 			prefixedTree, err = s.addPrefixToTree(splitTree, prefix.To)
@@ -358,6 +370,53 @@ func (s *state) addPrefixToTree(tree *git.Tree, prefix string) (*git.Tree, error
 	}
 
 	return prefixedTree, nil
+}
+
+func (s *state) pruneTree(tree *git.Tree, excludes []string) (*git.Tree, error) {
+	var err error
+	treeBuilder, err := s.repo.TreeBuilder()
+	if err != nil {
+		return nil, err
+	}
+	defer treeBuilder.Free()
+
+	err = tree.Walk(func(path string, entry *git.TreeEntry) error {
+		// always add files at the root directory
+		if entry.Type == git.ObjectBlob {
+			if err := treeBuilder.Insert(entry.Name, entry.Id, git.FilemodeBlob); err != nil {
+				return err
+			}
+			return nil
+		}
+
+		if entry.Type != git.ObjectTree {
+			// should never happen
+			return fmt.Errorf("Unexpected entry %s/%s (type %s)", path, entry.Name, entry.Type)
+		}
+
+		// exclude directory in excludes
+		for _, exclude := range excludes {
+			if entry.Name == exclude {
+				return git.TreeWalkSkip
+			}
+		}
+
+		if err := treeBuilder.Insert(entry.Name, entry.Id, git.FilemodeTree); err != nil {
+			return err
+		}
+		return git.TreeWalkSkip
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	treeOid, err := treeBuilder.Write()
+	if err != nil {
+		return nil, err
+	}
+
+	return s.repo.LookupTree(treeOid)
 }
 
 func (s *state) copyOrSkip(rev *git.Commit, tree *git.Tree, newParents []*git.Oid) (*git.Oid, bool, error) {

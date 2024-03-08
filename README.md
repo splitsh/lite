@@ -128,10 +128,18 @@ splitsh-lite --prefix=lib/ --origin=origin/1.0 --path=/path/to/repo
 
 Available options:
 
- * `--prefix` is the prefix of the directory to split; you can put the split
-   contents in a sub-directory of the target repository by using the
-   `--prefix=from:to` syntax; split several directories by passing multiple
-   `--prefix` flags;
+ * `--prefix` is the prefix of the directory to split; the value can be one of
+   the following:
+
+     * `from`: the origin directory to split;
+
+     * `from:to`: move the split content to a sub-directory on the target;
+
+     * `from:to:exclude`: exclude a directory from the origin `from` directory
+       (use `from:to:exclude1:exclude2:...` to exclude more than one
+       directory).
+
+   Split several directories by passing multiple `--prefix` flags;
 
  * `--path` is the path of the repository to split (current directory by default);
 

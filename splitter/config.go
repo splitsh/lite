@@ -3,6 +3,7 @@ package splitter
 import (
 	"fmt"
 	"log"
+	"strings"
 	"sync"
 
 	git "github.com/libgit2/git2go/v34"
@@ -11,8 +12,27 @@ import (
 
 // Prefix represents which paths to split
 type Prefix struct {
-	From string
-	To   string
+	From     string
+	To       string
+	Excludes []string
+}
+
+// NewPrefix returns a new prefix, sanitizing the input
+func NewPrefix(from, to string, excludes []string) *Prefix {
+	// remove the trailing slash (to avoid duplicating cache)
+	from = strings.TrimRight(from, "/")
+	to = strings.TrimRight(to, "/")
+
+	// remove trailing slashes from excludes (as it does not mean anything)
+	for i, exclude := range excludes {
+		excludes[i] = strings.TrimRight(exclude, "/")
+	}
+
+	return &Prefix{
+		From:     from,
+		To:       to,
+		Excludes: excludes,
+	}
 }
 
 // Config represents a split configuration

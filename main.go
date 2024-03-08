@@ -24,19 +24,24 @@ func (p *prefixesFlag) Set(value string) error {
 	parts := strings.Split(value, ":")
 	from := parts[0]
 	to := ""
-	if len(parts) > 1 {
-		to = parts[1]
+	excludes := make([]string, 0)
+	if len(parts) >= 2 {
+		to = strings.TrimRight(parts[1], "/")
+		if len(parts) > 2 {
+			for _, exclude := range parts[2:] {
+				excludes = append(excludes, exclude)
+			}
+		}
 	}
 
 	// value must be unique
-	for _, prefix := range []*splitter.Prefix(*p) {
-		// FIXME: to should be normalized (xxx vs xxx/ for instance)
+	for _, prefix := range *p {
 		if prefix.To == to {
 			return fmt.Errorf("cannot have two prefix splits under the same directory: %s -> %s vs %s -> %s", prefix.From, prefix.To, from, to)
 		}
 	}
 
-	*p = append(*p, &splitter.Prefix{From: from, To: to})
+	*p = append(*p, splitter.NewPrefix(from, to, excludes))
 	return nil
 }
 
@@ -73,7 +78,7 @@ func main() {
 	config := &splitter.Config{
 		Path:       path,
 		Origin:     origin,
-		Prefixes:   []*splitter.Prefix(prefixes),
+		Prefixes:   prefixes,
 		Target:     target,
 		Commit:     commit,
 		Debug:      debug,
