@@ -11,8 +11,9 @@ import (
 
 // Prefix represents which paths to split
 type Prefix struct {
-	From string
-	To   string
+	From     string
+	To       string
+	Excludes []string
 }
 
 // Config represents a split configuration

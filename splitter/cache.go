@@ -77,6 +77,9 @@ func key(config *Config) []byte {
 	for _, prefix := range config.Prefixes {
 		io.WriteString(h, prefix.From)
 		io.WriteString(h, prefix.To)
+		for _, exclude := range prefix.Excludes {
+			io.WriteString(h, exclude)
+		}
 	}
 
 	return h.Sum(nil)

@@ -24,8 +24,14 @@ func (p *prefixesFlag) Set(value string) error {
 	parts := strings.Split(value, ":")
 	from := parts[0]
 	to := ""
-	if len(parts) > 1 {
+	excludes := make([]string, 0)
+	if len(parts) >= 2 {
 		to = parts[1]
+		if len(parts) > 2 {
+			for _, exclude := range parts[2:] {
+				excludes = append(excludes, exclude)
+			}
+		}
 	}
 
 	// value must be unique
@@ -36,7 +42,7 @@ func (p *prefixesFlag) Set(value string) error {
 		}
 	}
 
-	*p = append(*p, &splitter.Prefix{From: from, To: to})
+	*p = append(*p, &splitter.Prefix{From: from, To: to, Excludes: excludes})
 	return nil
 }
 
