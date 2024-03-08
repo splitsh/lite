@@ -13,7 +13,7 @@ import (
 
 type state struct {
 	config       *Config
-	originBranch string
+	origin       string
 	repoMu       *sync.Mutex
 	repo         *git.Repository
 	cache        *cache
@@ -52,16 +52,16 @@ func newState(config *Config, result *Result) (*state, error) {
 		state.logger = log.New(os.Stderr, "", log.LstdFlags)
 	}
 
-	if state.originBranch, err = normalizeOriginBranch(state.repo, config.Origin); err != nil {
+	if state.origin, err = normalizeOrigin(state.repo, config.Origin); err != nil {
 		return nil, err
 	}
 
-	if state.cache, err = newCache(state.originBranch, config); err != nil {
+	if state.cache, err = newCache(state.origin, config); err != nil {
 		return nil, err
 	}
 
 	if config.Debug {
-		state.logger.Printf("Splitting %s", state.originBranch)
+		state.logger.Printf("Splitting %s", state.origin)
 		for _, v := range config.Prefixes {
 			to := v.To
 			if to == "" {
@@ -589,7 +589,7 @@ func (s *state) pushRevs(revWalk *git.RevWalk) error {
 	if start != nil {
 		s.result.moveHead(s.cache.get(start))
 		// FIXME: CHECK that this is an ancestor of the branch?
-		return revWalk.PushRange(fmt.Sprintf("%s..%s", start, s.originBranch))
+		return revWalk.PushRange(fmt.Sprintf("%s..%s", start, s.origin))
 	}
 
 	// find the latest split sha1 if any on origin
@@ -600,10 +600,10 @@ func (s *state) pushRevs(revWalk *git.RevWalk) error {
 			return err
 		}
 		s.result.moveHead(s.cache.get(start))
-		return revWalk.PushRange(fmt.Sprintf("%s^..%s", start, s.originBranch))
+		return revWalk.PushRange(fmt.Sprintf("%s^..%s", start, s.origin))
 	}
 
-	branch, err := s.repo.RevparseSingle(s.originBranch)
+	branch, err := s.repo.RevparseSingle(s.origin)
 	if err != nil {
 		return err
 	}

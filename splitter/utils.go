@@ -56,7 +56,7 @@ func SplitMessage(message string) (string, string) {
 	return subject, body
 }
 
-func normalizeOriginBranch(repo *git.Repository, origin string) (string, error) {
+func normalizeOrigin(repo *git.Repository, origin string) (string, error) {
 	if origin == "" {
 		origin = "HEAD"
 	}
