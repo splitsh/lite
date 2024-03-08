@@ -522,12 +522,18 @@ func (s *state) legacyMessage(rev *git.Commit) string {
 
 // pushRevs sets the range to split
 func (s *state) pushRevs(revWalk *git.RevWalk) error {
-	// this is needed as origin might be in the process of being updated by git.FetchOrigin()
 	s.repoMu.Lock()
 	defer s.repoMu.Unlock()
 
-	// find the latest split sha1 if any on origin
 	var start *git.Oid
+	start = s.cache.getHead()
+	if start != nil {
+		s.result.moveHead(s.cache.get(start))
+		// FIXME: CHECK that this is an ancestor of the branch?
+		return revWalk.PushRange(fmt.Sprintf("%s..%s", start, s.originBranch))
+	}
+
+	// find the latest split sha1 if any on origin
 	var err error
 	if s.config.Commit != "" {
 		start, err = git.NewOid(s.config.Commit)
@@ -536,13 +542,6 @@ func (s *state) pushRevs(revWalk *git.RevWalk) error {
 		}
 		s.result.moveHead(s.cache.get(start))
 		return revWalk.PushRange(fmt.Sprintf("%s^..%s", start, s.originBranch))
-	}
-
-	start = s.cache.getHead()
-	if start != nil {
-		s.result.moveHead(s.cache.get(start))
-		// FIXME: CHECK that this is an ancestor of the branch?
-		return revWalk.PushRange(fmt.Sprintf("%s..%s", start, s.originBranch))
 	}
 
 	branch, err := s.repo.RevparseSingle(s.originBranch)
