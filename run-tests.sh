@@ -155,6 +155,37 @@ twigSplitTest() {
     cd ../
 }
 
+filemodeTest() {
+    rm -rf filemode
+    mkdir filemode
+    cd filemode
+    git init > /dev/null
+
+    switchAsSammy "Sat, 24 Nov 1973 19:01:02 +0200" "Sat, 24 Nov 1973 19:11:22 +0200"
+    echo "a" > a
+    git add a
+    git commit -m"added a" > /dev/null
+
+    switchAsFred "Sat, 24 Nov 1973 20:01:02 +0200" "Sat, 24 Nov 1973 20:11:22 +0200"
+    mkdir b/
+    echo "b" > b/b
+    chmod +x b/b
+    git add b
+    git commit -m"added b" > /dev/null
+
+    $LITE_PATH --prefix=b/::not-important:also-not-important --target refs/heads/split 2>/dev/null
+    FILEMODE=`git ls-tree -r --format='%(objectmode)' split b`
+
+    if test "$FILEMODE" = "100755"; then
+        echo "Test #6 - OK"
+    else
+        echo "Test #6 - NOT OK"
+        exit 1
+    fi
+
+    cd ../
+}
+
 LITE_PATH=`pwd`/splitsh-lite
 if [ ! -e $LITE_PATH ]; then
     echo "You first need to compile the splitsh-lite binary"
@@ -169,3 +200,4 @@ cd splitter-lite-tests
 simpleTest
 mergeTest
 twigSplitTest
+filemodeTest
