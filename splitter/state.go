@@ -383,7 +383,7 @@ func (s *state) pruneTree(tree *git.Tree, excludes []string) (*git.Tree, error) 
 	err = tree.Walk(func(path string, entry *git.TreeEntry) error {
 		// always add files at the root directory
 		if entry.Type == git.ObjectBlob {
-			if err := treeBuilder.Insert(entry.Name, entry.Id, git.FilemodeBlob); err != nil {
+			if err := treeBuilder.Insert(entry.Name, entry.Id, entry.Filemode); err != nil {
 				return err
 			}
 			return nil
