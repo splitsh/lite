@@ -34,35 +34,44 @@ a monorepo, use the [tomono](https://github.com/unravelin/tomono) tool.
 Installation
 ------------
 
-Manual Installation
--------------------
+Docker (recommended)
+--------------------
 
-First, you need to install `libgit2`, preferably using your package manager of
-choice.
+The recommended way to use the splitter is via the official Docker image:
 
-If you get `libgit2` version `1.5`, you're all set and jump to the compilation
-step below. If not, you first need to change the `git2go` version used in the
-code. Using the table on the
-[libgit2](https://github.com/libgit2/git2go#which-go-version-to-use) repository,
-figure out which version of the `git2go` you need based on the `liggit2` library
-you installed. Let's say you need version `v31`:
+Manual Installation (not recommended)
+-------------------------------------
+
+To build the binary , you first need to install `libgit2`, preferably using
+your package manager of choice:
+
+* Via brew:
+
+  ```bash
+  brew install libgit2@1.5
+  ```
+
+* Via apt:
+
+  ```bash
+  apt install libgit2-dev
+  ```
+
+Note that the last version of `libgit2` supported (by git2go) is 1.5.
+
+If you get `libgit2` version `1.5`, you're all set and jump to the build step
+below. If not, you first need to change the `git2go` version used in the code.
+Using the table on the
+[libgit2](https://github.com/libgit2/git2go#which-go-version-to-use)
+repository, figure out which version of the `git2go` you need based on the
+`liggit2` library you installed. Let's say you need version `v31`:
 
 ```bash
 sed -i -e 's/v34/v31/g' go.mod splitter/*.go
 go mod tidy
 ```
 
-Then, compile `splitsh-lite`:
-
-```bash
-go build -o splitsh-lite github.com/splitsh/lite
-```
-
-If everything goes fine, a `splitsh-lite` binary should be available in the
-current directory.
-
-If you get errors about an incompatible `libgit2` library, try exporting the
-needed flags, e.g.
+On MacOS, export the following flags:
 
 ```bash
 export LDFLAGS="-L/opt/homebrew/opt/libgit2@1.5/lib"
@@ -70,7 +79,14 @@ export CPPFLAGS="-I/opt/homebrew/opt/libgit2@1.5/include"
 export PKG_CONFIG_PATH="/opt/homebrew/opt/libgit2@1.5/lib/pkgconfig"
 ```
 
-before running `go build`.
+Then, build the `splitsh-lite` binary:
+
+```bash
+go build -o splitsh-lite github.com/splitsh/lite
+```
+
+If everything goes fine, a `splitsh-lite` binary should be available in the
+current directory.
 
 If you want to integrate splitsh with Git, install it like this (and use it via
 `git splitsh`):
@@ -82,14 +98,18 @@ cp splitsh-lite "$(git --exec-path)"/git-splitsh
 Usage
 -----
 
-Let's say you want to split the `lib/` directory of a repository to its own
-branch; from the "master" Git repository (bare or clone), run:
+Let's say you want to split the `lib/` directory of a repository stored in the
+current directory from the current branch (bare or clone), run:
 
 ```bash
+# Docker
+docker run --rm -v $PWD:/data splitsh-lite --prefix=lib/
+
+# Binary
 splitsh-lite --prefix=lib/
 ```
 
-The *sha1* of the split is displayed at the end of the execution:
+The command outputs the *sha1* of the split:
 
 ```bash
 SHA1=`splitsh-lite --prefix=lib/`
@@ -119,10 +139,13 @@ split a different branch by passing it explicitly via the `--origin` flag
 splitsh-lite --prefix=lib/ --origin=origin/master
 ```
 
-You don't even need to run the command from the Git repository directory if you
-pass the `--path` option:
+You don't even need to run the command from the Git repository directory:
 
 ```bash
+# Docker
+docker run --rm -v /path/to/repo:/data splitsh-lite --prefix=lib/ --origin=origin/1.0
+
+# Binary
 splitsh-lite --prefix=lib/ --origin=origin/1.0 --path=/path/to/repo
 ```
 
@@ -141,7 +164,8 @@ Available options:
 
    Split several directories by passing multiple `--prefix` flags;
 
- * `--path` is the path of the repository to split (current directory by default);
+ * `--path` is the path of the repository to split (current directory by
+   default, or use the `-v` option of Docker when using the Docker image);
 
  * `--origin` is the Git reference for the origin (can be any Git reference
    like `HEAD`, `heads/xxx`, `tags/xxx`, `origin/xxx`, or any `refs/xxx`);
